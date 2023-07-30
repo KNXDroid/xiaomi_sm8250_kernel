@@ -155,9 +155,27 @@ static inline struct tracepoint *tracepoint_ptr_deref(tracepoint_ptr_t *p)
  * wants to be able to disable its tracepoints from being created
  * it can define NOTRACE before including the tracepoint headers.
  */
+#ifndef CONFIG_ANDROID_ONLY_VH_TRACING
 #if defined(CONFIG_TRACEPOINTS) && !defined(NOTRACE)
 #define TRACEPOINTS_ENABLED
 #endif
+#endif /* CONFIG_ANDROID_ONLY_VH_TRACING */
+
+#ifdef CONFIG_HAVE_STATIC_CALL
+#define __DO_TRACE_CALL(name, args)					\
+	do {								\
+		struct tracepoint_func *it_func_ptr;			\
+		void *__data;						\
+		it_func_ptr =						\
+			rcu_dereference_raw((&__tracepoint_##name)->funcs); \
+		if (it_func_ptr) {					\
+			__data = (it_func_ptr)->data;			\
+			static_call(tp_func_##name)(__data, args);	\
+		}							\
+	} while (0)
+#else
+#define __DO_TRACE_CALL(name, args)	__traceiter_##name(NULL, args)
+#endif /* CONFIG_HAVE_STATIC_CALL */
 
 #ifdef TRACEPOINTS_ENABLED
 

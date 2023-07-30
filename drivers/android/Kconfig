@@ -53,13 +53,16 @@ config ANDROID_DEBUG_SYMBOLS
 	  This driver is statically compiled into kernel and maintains all the
 	  required symbol addresses for vendor modules and provides necessary
 	  interface vendor modules.
+
 config ANDROID_VENDOR_HOOKS
 	bool "Android Vendor Hooks"
-	depends on TRACEPOINTS
+	select TRACEPOINTS
+	select ANDROID_ONLY_VH_TRACING if !FTRACE
 	help
 	  Enable vendor hooks implemented as tracepoints
 	  Allow vendor modules to attach to tracepoint "hooks" defined via
 	  DECLARE_HOOK or DECLARE_RESTRICTED_HOOK.
+
 config ANDROID_STRUCT_PADDING
 	bool "Android Struct Padding"
 	default y
