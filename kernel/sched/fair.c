@@ -11449,6 +11449,13 @@ static void kick_ilb(unsigned int flags)
 	if ((atomic_read(nohz_flags(ilb_cpu)) & flags) == flags)
 		return;
 
+	/*
+	 * Don't bother if no new NOHZ balance work items for ilb_cpu,
+	 * i.e. all bits in flags are already set in ilb_cpu.
+	 */
+	if ((atomic_read(nohz_flags(ilb_cpu)) & flags) == flags)
+		return;
+
 	flags = atomic_fetch_or(flags, nohz_flags(ilb_cpu));
 	if (flags & NOHZ_KICK_MASK)
 		return;
