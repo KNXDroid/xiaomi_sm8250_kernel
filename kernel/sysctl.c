@@ -1954,7 +1954,7 @@ static struct ctl_table vm_table[] = {
 		.maxlen		= sizeof(sysctl_page_lock_unfairness),
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec_minmax,
-		.extra1		= &zero,
+		.extra1		= SYSCTL_ZERO,
 	},
 #ifdef CONFIG_MMU
 	{
