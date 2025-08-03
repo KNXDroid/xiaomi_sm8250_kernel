@@ -51,4 +51,5 @@ config OPLUS_POWERINFO_FTM
 		Select this config to enable powerinfo ftm
 
 source "fs/oext4/Kconfig"
+source "fs/oerofs/Kconfig"
 source "net/oplus_nwpower/Kconfig"
