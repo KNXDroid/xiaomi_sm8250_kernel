@@ -1197,6 +1197,12 @@ config SCHED_CORE_CTL
 
 	  If unsure, say N here.
 
+config E404_OPLUS
+	bool "Build E404 for Oplus Rom"
+
+config E404_MIUI
+	bool "Build E404 for MIUI/Hyperos Rom"
+
 menuconfig NAMESPACES
 	bool "Namespaces support" if EXPERT
 	depends on MULTIUSER
