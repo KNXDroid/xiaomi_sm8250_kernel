@@ -74,18 +74,16 @@ static int __init parse_e404_args(char *str)
             e404_early_effcpu = 1;
         else if (strcmp(arg, "dtb_def") == 0)
             e404_early_effcpu = 0;
-        else if (strcmp(arg, "port") == 0) {
+        else if (strcmp(arg, "port") == 0)
             e404_early_rom_type = 3;
-            e404_early_dtbo_type = 1;
-        }
-        else if (strcmp(arg, "miui") == 0) {
+        else if (strcmp(arg, "miui") == 0)
             e404_early_rom_type = 2;
-            e404_early_dtbo_type = 2;
-        }
-        else if (strcmp(arg, "aosp") == 0) {
+        else if (strcmp(arg, "aosp") == 0)
             e404_early_rom_type = 1;
+        else if (strcmp(arg, "dtbo_def") == 0)
             e404_early_dtbo_type = 1;
-        }
+        else if (strcmp(arg, "dtbo_oem") == 0)
+            e404_early_dtbo_type = 2;
         else if (strcmp(arg, "ir_blaster_mi") == 0)
             e404_early_ir_type = 1;
         else if (strcmp(arg, "ir_blaster_def") == 0)
