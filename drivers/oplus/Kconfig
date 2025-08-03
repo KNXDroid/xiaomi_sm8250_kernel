@@ -20,6 +20,12 @@ config OPLUS_NANDSWAP_DEBUG
 	help
 	 nandswap debug
 
+config OPLUS_NWPOWER
+    bool "OPLUS NWPOWER"
+    default y
+    help
+	 add for oplus wakelock_profiler
+
 config OPLUS_SUBSYS_SLEEP_MONITOR
 	bool "monitor Qualcomm subsystem sleep"
 	default y
@@ -52,4 +58,3 @@ config OPLUS_POWERINFO_FTM
 
 source "fs/oext4/Kconfig"
 source "fs/oerofs/Kconfig"
-source "net/oplus_nwpower/Kconfig"

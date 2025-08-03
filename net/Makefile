@@ -87,4 +87,3 @@ obj-$(CONFIG_QRTR)		+= qrtr/
 obj-$(CONFIG_NET_NCSI)		+= ncsi/
 obj-$(CONFIG_XDP_SOCKETS)	+= xdp/
 obj-$(CONFIG_SLA_STAIC_COLLECT)	+= sla/
-obj-$(CONFIG_OPLUS_NWPOWER)	+= oplus_nwpower/
