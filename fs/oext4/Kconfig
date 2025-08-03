@@ -113,13 +113,13 @@ config EXT4_FS_ENCRYPTION
 
 config OPLUS_OEXT4
 	bool "OEXT4 independent repo"
-	default y
+	default n
 	help
 	  define this config to switch ext4 repo.
 
 config OPLUS_EXT4_ASYNC_DISCARD
 	bool "OEXT4 async discard Support"
-	default y
+	default n
 	depends on OPLUS_OEXT4
 
 config EXT4_DEBUG
@@ -135,11 +135,11 @@ config EXT4_DEBUG
 #//add for ext4 macro
 config OPLUS_EXT4_FRAGMENT
 	bool "OEXT4 frag_score support"
-	default y
+	default n
 	depends on OPLUS_OEXT4
 
 #add control ext4 fsync
 config OPLUS_EXT4_FSYNC
 	bool "OEXT4 fsync nobarrier support"
-	default y
+	default n
 	depends on OPLUS_OEXT4

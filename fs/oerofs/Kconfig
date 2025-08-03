@@ -96,6 +96,6 @@ config EROFS_FS_PCPU_KTHREAD_HIPRI
 
 config OPLUS_FEATURE_EROFS
 	bool "Oplus Erofs"
-	default y
+	default n
 	help
 	  define this config to switch oplus erofs.

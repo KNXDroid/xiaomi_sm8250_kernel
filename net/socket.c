@@ -108,7 +108,10 @@
 #include <linux/sockios.h>
 #include <net/busy_poll.h>
 #include <linux/errqueue.h>
+
+#ifdef CONFIG_OPLUS_NWPOWER
 #include <net/oplus_nwpower.h>
+#endif
 
 /* proto_ops for ipv4 and ipv6 use the same {recv,send}msg function */
 #if IS_ENABLED(CONFIG_INET)
@@ -446,9 +449,11 @@ struct file *sock_alloc_file(struct socket *sock, int flags, const char *dname)
 	}
 	put_pid(pid);
 
+#ifdef CONFIG_OPLUS_NWPOWER
 	if (sock->sk) {
 		sock->sk->sk_oplus_pid = current->tgid;
 	}
+#endif
 
 	return file;
 }
@@ -1837,8 +1842,10 @@ int __sys_connect(int fd, struct sockaddr __user *uservaddr, int addrlen)
 	if (err < 0)
 		goto out_put;
 
+#ifdef CONFIG_OPLUS_NWPOWER
 	if(oplus_check_socket_in_blacklist(OPLUS_NET_OUTPUT, sock))
 		return -EACCES;
+#endif
 	err =
 	    security_socket_connect(sock, (struct sockaddr *)&address, addrlen);
 	if (err)
@@ -1956,8 +1963,10 @@ int __sys_sendto(int fd, void __user *buff, size_t len, unsigned int flags,
 	if (!sock)
 		goto out;
 
+#ifdef CONFIG_OPLUS_NWPOWER
 	if(oplus_check_socket_in_blacklist(OPLUS_NET_OUTPUT, sock))
 		return -EACCES;
+#endif
 
 	msg.msg_name = NULL;
 	msg.msg_control = NULL;
@@ -2020,8 +2029,10 @@ int __sys_recvfrom(int fd, void __user *ubuf, size_t size, unsigned int flags,
 	if (!sock)
 		goto out;
 
+#ifdef CONFIG_OPLUS_NWPOWER
 	if(oplus_check_socket_in_blacklist(OPLUS_NET_INPUT, sock))
 		return err;
+#endif
 
 	msg.msg_control = NULL;
 	msg.msg_controllen = 0;
@@ -2343,8 +2354,10 @@ long __sys_sendmsg(int fd, struct user_msghdr __user *msg, unsigned int flags,
 	if (!sock)
 		goto out;
 
+#ifdef CONFIG_OPLUS_NWPOWER
 	if(oplus_check_socket_in_blacklist(OPLUS_NET_OUTPUT, sock))
 		return -EACCES;
+#endif
 
 	err = ___sys_sendmsg(sock, msg, &msg_sys, flags, NULL, 0);
 
@@ -2388,8 +2401,10 @@ int __sys_sendmmsg(int fd, struct mmsghdr __user *mmsg, unsigned int vlen,
 	used_address.name_len = UINT_MAX;
 	entry = mmsg;
 
+#ifdef CONFIG_OPLUS_NWPOWER
 	if(oplus_check_socket_in_blacklist(OPLUS_NET_OUTPUT, sock))
 		return -EACCES;
+#endif
 
 	compat_entry = (struct compat_mmsghdr __user *)mmsg;
 	err = 0;
@@ -2523,8 +2538,10 @@ long __sys_recvmsg(int fd, struct user_msghdr __user *msg, unsigned int flags,
 	if (!sock)
 		goto out;
 
+#ifdef CONFIG_OPLUS_NWPOWER
 	if(oplus_check_socket_in_blacklist(OPLUS_NET_INPUT, sock))
 		return err;
+#endif
 
 	err = ___sys_recvmsg(sock, msg, &msg_sys, flags, 0);
 
@@ -2565,8 +2582,10 @@ int __sys_recvmmsg(int fd, struct mmsghdr __user *mmsg, unsigned int vlen,
 	if (!sock)
 		return err;
 
+#ifdef CONFIG_OPLUS_NWPOWER
 	if(oplus_check_socket_in_blacklist(OPLUS_NET_INPUT, sock))
 		return err;
+#endif
 
 	if (likely(!(flags & MSG_ERRQUEUE))) {
 		err = sock_error(sock->sk);
