@@ -296,7 +296,6 @@ void bts_net_clear(void)
 }
 bool bts_net_exist(void)
 {
-        int platform_id = get_cached_platform_id();
 	return bts_net_wakeup_buffer[0] == 0 ? false : true;
 }
 ssize_t bts_net_fill(char * desc, ssize_t size)
