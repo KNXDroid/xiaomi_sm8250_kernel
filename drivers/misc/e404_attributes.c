@@ -7,7 +7,6 @@ struct e404_attributes e404_data = {
     .effcpu = 0,
     .rom_type = 1,
     .dtbo_type = 1,
-    .batt_profile = 1,
     .dvq_input_boost = 1,
     .kgsl_skip_zeroing = 0,
     .pid_shrink = 0,
@@ -45,12 +44,6 @@ int early_dtbo_type = 2;
 int early_dtbo_type = 1;
 #endif
 
-#ifdef CONFIG_E404_ALIOTH_5K_BATT_DEFAULT
-int early_batt_profile = 2;
-#else
-int early_batt_profile = 1;
-#endif
-
 static int __init parse_e404_args(char *str)
 {
     char *arg;
@@ -78,10 +71,6 @@ static int __init parse_e404_args(char *str)
             early_dtbo_type = 1;
         else if (strcmp(arg, "dtbo_oem") == 0)
             early_dtbo_type = 2;
-        else if (strcmp(arg, "batt_def") == 0)
-            early_batt_profile = 1;
-        else if (strcmp(arg, "batt_5k") == 0)
-            early_batt_profile = 2;
         else
             pr_alert("E404: Unknown flag: %s\n", arg);
     }
@@ -95,14 +84,12 @@ static void e404_parse_attributes(void) {
     e404_data.effcpu = early_effcpu;
     e404_data.rom_type = early_rom_type;
     e404_data.dtbo_type = early_dtbo_type;
-    e404_data.batt_profile = early_batt_profile;
 
-    pr_alert("E404 Early Attributes: KernelSU=%d, EFFCPU=%d, RomType=%d, DTBOType=%d, BatteryProfile=%d\n",
+    pr_alert("E404 Early Attributes: KernelSU=%d, EFFCPU=%d, RomType=%d, DTBOType=%d\n",
         e404_data.kernelsu,
         e404_data.effcpu,
         e404_data.rom_type,
-        e404_data.dtbo_type,
-        e404_data.batt_profile);
+        e404_data.dtbo_type);
 }
 
 #define E404_ATTR_RO(name) \
@@ -131,7 +118,6 @@ E404_ATTR_RO(kernelsu);
 E404_ATTR_RO(effcpu);
 E404_ATTR_RO(rom_type);
 E404_ATTR_RO(dtbo_type);
-E404_ATTR_RO(batt_profile);
 E404_ATTR_RO(panel_width);
 E404_ATTR_RO(panel_height);
 E404_ATTR_RO(oem_panel_width);
@@ -146,7 +132,6 @@ static struct attribute *e404_attrs[] = {
     &effcpu_attr.attr,
     &rom_type_attr.attr,
     &dtbo_type_attr.attr,
-    &batt_profile_attr.attr,
     &dvq_input_boost_attr.attr,
     &kgsl_skip_zeroing_attr.attr,
     &pid_shrink_attr.attr,
