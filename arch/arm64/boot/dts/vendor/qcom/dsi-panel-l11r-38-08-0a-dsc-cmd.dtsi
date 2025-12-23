@@ -160,13 +160,34 @@
 				qcom,mdss-dsi-off-command-state = "dsi_lp_mode";
 
 				qcom,mdss-dsi-timing-switch-command = [
-					39 00 00 00 00 00 02 60 00
+					/* 1. Open Access */
+					39 00 00 00 00 00 02 60 00      /* Frequency Select 60Hz */
 					39 00 00 00 00 00 03 F0 5A 5A
 					39 00 00 00 00 00 03 FC 5A 5A
+
+					/* 2. SAFE CLEANUP: Reset only Color/Voltage overrides */
+
+					39 00 00 00 00 00 02 B0 77
+					39 01 00 00 00 00 03 D3 00 00
+
+					39 00 00 00 00 00 02 B0 7B
+					39 01 00 00 00 00 03 D3 00 00
+
+					39 00 00 00 00 00 02 B0 99
+					39 01 00 00 00 00 03 D3 00 00
+
+					39 00 00 00 00 00 02 B0 AF
+					39 00 00 00 00 00 02 D3 00
+
+					39 00 00 00 00 00 02 B0 B3
+					39 00 00 00 00 00 02 D3 00
+
+					/* 3. Apply Standard 60Hz Settings */
 					39 00 00 00 00 00 02 B0 16
-					39 00 00 00 00 00 02 D1 2E
+					39 00 00 00 00 00 02 D1 2E      /* Standard H-Porch */
 					39 00 00 00 00 00 03 FC A5 A5
-					39 01 00 00 0C 00 03 F0 A5 A5];
+					39 01 00 00 0C 00 03 F0 A5 A5
+				];
 				qcom,mdss-dsi-timing-switch-command-state = "dsi_lp_mode";
 
 				qcom,mdss-dsi-nolp-command = [
@@ -308,13 +329,40 @@
 				qcom,mdss-dsi-off-command-state = "dsi_lp_mode";
 
 				qcom,mdss-dsi-timing-switch-command = [
-					39 00 00 00 00 00 02 60 10
+					/* 1. Open Access */
+					39 01 00 00 00 00 03 F0 5A 5A
+					39 01 00 00 00 00 03 F1 5A 5A
+					39 01 00 00 00 00 03 FC 5A 5A
+
+					/* 2. SAFE CLEANUP: Reset only Color/Voltage overrides */
+					/* We SKIP Banks 14, 2A, 2E, 5F (Timing) to prevent "Blank Color" crash */
+
+					39 00 00 00 00 00 02 B0 77
+					39 01 00 00 00 00 03 D3 00 00   /* Reset Gamma/Voltage Offset */
+
+					39 00 00 00 00 00 02 B0 7B
+					39 01 00 00 00 00 03 D3 00 00   /* Reset Gamma/Voltage Offset */
+
+					39 00 00 00 00 00 02 B0 99
+					39 01 00 00 00 00 03 D3 00 00   /* Reset Vcom/Source Voltage */
+
+					39 00 00 00 00 00 02 B0 AF
+					39 00 00 00 00 00 02 D3 00      /* Reset Voltage Trim */
+
+					39 00 00 00 00 00 02 B0 B3
+					39 00 00 00 00 00 02 D3 00      /* Reset Voltage Trim */
+
+					39 00 00 00 00 00 02 F7 03      /* Ripple setting reset */
+
+					/* 3. Apply Standard 120Hz Settings */
+					39 00 00 00 00 00 02 60 10      /* Frequency Select 120Hz */
 					39 00 00 00 00 00 03 F0 5A 5A
 					39 00 00 00 00 00 03 FC 5A 5A
 					39 00 00 00 00 00 02 B0 16
-					39 00 00 00 00 00 02 D1 2E
-					39 00 00 00 00 00 03 FC A5 A5
-					39 01 00 00 00 00 03 F0 A5 A5];
+					39 00 00 00 00 00 02 D1 2E      /* Standard H-Porch */
+					39 01 00 00 00 00 03 FC A5 A5
+					39 01 00 00 00 00 03 F0 A5 A5
+				];
 				qcom,mdss-dsi-timing-switch-command-state = "dsi_lp_mode";
 
 				qcom,mdss-dsi-nolp-command = [
