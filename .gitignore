@@ -142,3 +142,8 @@ kernel/configs/android-*.cfg
 out/
 build.sh
 dtbo_build.sh
+
+preparecompiler.sh
+clang.sh
+gcc-linaro-13.0.0-2022.10-x86_64_aarch64-linux-gnu
+clang
