@@ -448,7 +448,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common -fshort-wchar \
 		   -Werror-implicit-function-declaration \
 		   -Werror=return-type -Wno-format-security \
-		   -std=gnu89 -pipe
+		   -std=gnu89 -pipe -Wno-default-const-init-field-unsafe
 KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -702,10 +702,11 @@ KBUILD_LDFLAGS  += -O2
 endif
 
 ifeq ($(cc-name),clang)
-KBUILD_CFLAGS   += -mllvm -hot-cold-split=true
 KBUILD_CFLAGS   += -mllvm -regalloc-enable-advisor=release
-KBUILD_LDFLAGS  += -mllvm -regalloc-enable-advisor=release
-KBUILD_LDFLAGS  += -mllvm -enable-ml-inliner=release
+KBUILD_CFLAGS   += -mllvm -enable-machine-outliner
+#KBUILD_LDFLAGS  += -mllvm -regalloc-enable-advisor=release
+#KBUILD_LDFLAGS  += -mllvm -enable-ml-inliner=release
+#KBUILD_LDFLAGS  += -mllvm -enable-machine-outliner
 
 KBUILD_CFLAGS   += -mcpu=cortex-a55
 KBUILD_AFLAGS   += -mcpu=cortex-a55
