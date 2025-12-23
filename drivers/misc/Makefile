@@ -84,3 +84,4 @@ obj-$(CONFIG_GPIO_TESTING_MODE)	+= gpio-testing-mode.o
 obj-$(CONFIG_PERF_HELPER)	+= perf_helper.o
 obj-$(CONFIG_E404_SIGNATURE)	+=	e404_attributes.o
 obj-y += fps_listener/
+obj-y += trace_stubs.o

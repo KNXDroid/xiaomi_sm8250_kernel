@@ -4,6 +4,12 @@
  */
 
 #include <linux/module.h>
+#include <linux/tracepoint.h>
+
+/* If the macro is missing, define it to manually export the tracepoint symbol */
+#ifndef EXPORT_TRACEPOINT_SYMBOL
+#define EXPORT_TRACEPOINT_SYMBOL(name) EXPORT_SYMBOL_GPL(__tracepoint_##name)
+#endif
 
 #include "kgsl_device.h"
 

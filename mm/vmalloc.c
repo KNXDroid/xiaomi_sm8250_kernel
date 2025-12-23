@@ -1768,79 +1768,8 @@ static void vb_free(const void *addr, unsigned long size)
 }
 
 static void _vm_unmap_aliases(unsigned long start, unsigned long end, int flush)
-<<<<<<< HEAD
-{
-	LIST_HEAD(purge_list);
-	int cpu;
-
-	if (unlikely(!vmap_initialized))
-		return;
-
-	mutex_lock(&vmap_purge_lock);
-
-	for_each_possible_cpu(cpu) {
-		struct vmap_block_queue *vbq = &per_cpu(vmap_block_queue, cpu);
-		struct vmap_block *vb;
-		unsigned long idx;
-
-		rcu_read_lock();
-		xa_for_each(&vbq->vmap_blocks, idx, vb) {
-			spin_lock(&vb->lock);
-
-			/*
-			 * Try to purge a fragmented block first. If it's
-			 * not purgeable, check whether there is dirty
-			 * space to be flushed.
-			 */
-			if (!purge_fragmented_block(vb, &purge_list, false) &&
-			    vb->dirty_max && vb->dirty != VMAP_BBMAP_BITS) {
-				unsigned long va_start = vb->va->va_start;
-				unsigned long s, e;
-
-				s = va_start + (vb->dirty_min << PAGE_SHIFT);
-				e = va_start + (vb->dirty_max << PAGE_SHIFT);
-
-				start = min(s, start);
-				end   = max(e, end);
-
-				/* Prevent that this is flushed again */
-				vb->dirty_min = VMAP_BBMAP_BITS;
-				vb->dirty_max = 0;
-
-				flush = 1;
-			}
-			spin_unlock(&vb->lock);
-		}
-		rcu_read_unlock();
-	}
-	free_purged_blocks(&purge_list);
-
-	if (!__purge_vmap_area_lazy(start, end) && flush)
-		flush_tlb_kernel_range(start, end);
-	mutex_unlock(&vmap_purge_lock);
-}
-
-/**
- * vm_unmap_aliases - unmap outstanding lazy aliases in the vmap layer
- *
- * The vmap/vmalloc layer lazily flushes kernel virtual mappings primarily
- * to amortize TLB flushing overheads. What this means is that any page you
- * have now, may, in a former life, have been mapped into kernel virtual
- * address by the vmap layer and so there might be some CPUs with TLB entries
- * still referencing that page (additional to the regular 1:1 kernel mapping).
- *
- * vm_unmap_aliases flushes all such lazy mappings. After it returns, we can
- * be sure that none of the pages we have control over will have any aliases
- * from the vmap layer.
- */
-void vm_unmap_aliases(void)
-{
-	unsigned long start = ULONG_MAX, end = 0;
-	int flush = 0;
-=======
 {
 	int cpu;
->>>>>>> bbf3cb22f9 (treewide: Squash backport bpf from 5.10)
 
 	_vm_unmap_aliases(start, end, flush);
 }
