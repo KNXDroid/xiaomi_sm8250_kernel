@@ -709,8 +709,8 @@ KBUILD_CFLAGS   += -mllvm -enable-machine-outliner
 #KBUILD_LDFLAGS  += -mllvm -enable-ml-inliner=release
 #KBUILD_LDFLAGS  += -mllvm -enable-machine-outliner
 
-KBUILD_CFLAGS   += -mcpu=cortex-a55
-KBUILD_AFLAGS   += -mcpu=cortex-a55
+KBUILD_CFLAGS   += -march=armv8.2-a+lse+crypto+dotprod
+KBUILD_AFLAGS   += -march=armv8.2-a+lse+crypto+dotprod
 else
 KBUILD_CFLAGS	+= -fgraphite-identity -floop-nest-optimize
 KBUILD_CFLAGS	+= -fipa-pta -fgcse-sm
