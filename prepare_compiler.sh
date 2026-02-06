@@ -3,6 +3,7 @@ mkdir clang
 cd clang
 bash <(curl -s https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman) -S
 cd ..
-wget https://snapshots.linaro.org/gnu-toolchain/13.0-2022.10-1/aarch64-linux-gnu/gcc-linaro-13.0.0-2022.10-x86_64_aarch64-linux-gnu.tar.xz
-tar -xf gcc-linaro-13.0.0-2022.10-x86_64_aarch64-linux-gnu.tar.xz
-rm -rf gcc-linaro-13.0.0-2022.10-x86_64_aarch64-linux-gnu.tar.xz
+wget https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz
+tar -xvf arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz
+mv arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu gcc-compiler
+rm -rf arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz
