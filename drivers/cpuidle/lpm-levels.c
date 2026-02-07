@@ -42,6 +42,8 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/trace_msm_low_power.h>
 
+#include <linux/fps_listener.h>
+
 #define SCLK_HZ (32768)
 #define PSCI_POWER_STATE(reset) (reset << 30)
 #define PSCI_AFFINITY_LEVEL(lvl) ((lvl & 0x3) << 24)
@@ -161,6 +163,15 @@ static int cluster_select(struct lpm_cluster *cluster, bool from_idle)
 		return -EINVAL;
 
 	sleep_us = (uint32_t)get_cluster_sleep_time(cluster, from_idle);
+
+	if (from_idle && g_target_fps <= 30) {
+		/*
+		 * Add 5000us (5ms) bias.
+		 * Usually C3/C4 states require ~1000-2000us residency to be worth it.
+		 * This ensures we hit that threshold easily.
+		 */
+		sleep_us += 2000;
+	}
 
 	if (cpumask_and(&mask, cpu_online_mask, &cluster->child_cpus))
 		latency_us = pm_qos_request_for_cpumask(PM_QOS_CPU_DMA_LATENCY,

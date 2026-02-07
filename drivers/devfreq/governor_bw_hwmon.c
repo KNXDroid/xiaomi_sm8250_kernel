@@ -25,6 +25,8 @@
 #include "governor.h"
 #include "governor_bw_hwmon.h"
 
+#include <linux/fps_listener.h>
+
 #define NUM_MBPS_ZONES		10
 struct hwmon_node {
 	unsigned int guard_band_mbps;
@@ -315,6 +317,10 @@ static unsigned long get_bw_and_set_irq(struct hwmon_node *node,
 	ktime_t ts;
 	unsigned int ms = 0;
 
+	unsigned int eff_up_scale = node->up_scale;
+	unsigned int eff_up_thres = node->up_thres;
+	bool low_fps_mode = (g_target_fps <= 30);
+
 	spin_lock_irqsave(&irq_lock, flags);
 
 	if (!hw->set_hw_events) {
@@ -357,6 +363,15 @@ static unsigned long get_bw_and_set_irq(struct hwmon_node *node,
 	meas_mbps_zone = to_mbps_zone(node, meas_mbps_zone);
 	meas_mbps_zone = (meas_mbps_zone * io_percent) / 100;
 	meas_mbps_zone = max(meas_mbps, meas_mbps_zone);
+
+	if (low_fps_mode) {
+		// 1. Disable predictive up-scaling
+		eff_up_scale = 0;
+
+		// 2. Make the HW Monitor "Lazy"
+		if (eff_up_thres < 50)
+			eff_up_thres = 50;
+	}
 
 	/*
 	 * If this is a wake up due to BW increase, vote much higher BW than
@@ -413,6 +428,12 @@ static unsigned long get_bw_and_set_irq(struct hwmon_node *node,
 	if (node->hyst_en) {
 		if (meas_mbps > node->idle_mbps)
 			req_mbps = max(req_mbps, node->hyst_mbps);
+	}
+
+	if (low_fps_mode) {
+		// Cap at 2500 MBps
+		if (req_mbps > 2500)
+			req_mbps = 2500;
 	}
 
 	/* Stretch the short sample window size, if the traffic is too low */

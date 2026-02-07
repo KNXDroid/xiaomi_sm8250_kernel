@@ -40,6 +40,7 @@
 #include <linux/pm_runtime.h>
 #include <linux/err.h>
 #include <trace/events/power.h>
+#include <linux/fps_listener.h>
 
 #include "power.h"
 
@@ -136,11 +137,25 @@ static int apply_constraint(struct dev_pm_qos_request *req,
 {
 	struct dev_pm_qos *qos = req->dev->power.qos;
 	int ret;
+	bool low_fps_mode = (g_target_fps <= 15);
 
 	switch(req->type) {
 	case DEV_PM_QOS_RESUME_LATENCY:
 		if (WARN_ON(action != PM_QOS_REMOVE_REQ && value < 0))
 			value = 0;
+
+		/*
+		 ** OPTIMIZATION: Deep Sleep Enforcer
+		 * If FPS is low, ignore requests for ultra-low latency (< 2ms).
+		 * This allows the CPU/SoC to enter Cluster Power Collapse (C4/LPM)
+		 * even if a driver (like sensors/touch) thinks it needs instant response.
+		 */
+		if (low_fps_mode && action != PM_QOS_REMOVE_REQ) {
+			if (value >= 0 && value < 2000 &&
+				value != PM_QOS_RESUME_LATENCY_NO_CONSTRAINT) {
+				value = 2000;
+			}
+		}
 
 		ret = pm_qos_update_target(&qos->resume_latency,
 					   &req->data.pnode, action, value,

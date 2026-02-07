@@ -13,6 +13,7 @@
 #include <linux/slab.h>
 #include <linux/mutex.h>
 #include <linux/of_platform.h>
+#include <linux/fps_listener.h>
 
 #include <linux/msm-bus.h>
 #include <linux/msm-bus-board.h>
@@ -288,6 +289,7 @@ static int _sde_power_data_bus_set_quota(
 	u64 in_ab_quota, u64 in_ib_quota)
 {
 	int new_uc_idx;
+	bool low_fps_mode = (g_target_fps <= 30);
 	u64 ab_quota[MAX_AXI_PORT_COUNT] = {0, 0};
 	u64 ib_quota[MAX_AXI_PORT_COUNT] = {0, 0};
 	int rc;
@@ -312,8 +314,13 @@ static int _sde_power_data_bus_set_quota(
 			return -EINVAL;
 		}
 
-		ab_quota[0] = div_u64(in_ab_quota, total_data_paths_cnt);
-		ib_quota[0] = div_u64(in_ib_quota, total_data_paths_cnt);
+		if (low_fps_mode) {
+			ab_quota[0] = (div_u64(in_ab_quota, total_data_paths_cnt) * 70) / 100;
+			ib_quota[0] = (div_u64(in_ib_quota, total_data_paths_cnt) * 70) / 100;
+		} else {
+			ab_quota[0] = div_u64(in_ab_quota, total_data_paths_cnt);
+			ib_quota[0] = div_u64(in_ib_quota, total_data_paths_cnt);
+		}
 
 		for (i = 1; i < total_data_paths_cnt; i++) {
 			ab_quota[i] = ab_quota[0];

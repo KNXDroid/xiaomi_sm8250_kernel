@@ -17,6 +17,7 @@
 #include <soc/qcom/scm.h>
 #include <soc/qcom/qtee_shmbridge.h>
 #include "governor.h"
+#include <linux/fps_listener.h>
 
 static DEFINE_SPINLOCK(tz_lock);
 /*
@@ -362,6 +363,8 @@ static int tz_get_target_freq(struct devfreq *devfreq, unsigned long *freq)
 	int val, level = 0;
 	unsigned int scm_data[4];
 	int context_count = 0;
+	u32 fps = g_target_fps;
+	unsigned int refresh_rate = dsi_panel_get_refresh_rate();
 
 	/* keeps stats.private_data == NULL   */
 	result = devfreq_update_stats(devfreq);
@@ -406,17 +409,14 @@ static int tz_get_target_freq(struct devfreq *devfreq, unsigned long *freq)
 			priv->bin.busy_time > CEILING) {
 		val = -1 * level;
 	} else {
-		unsigned int refresh_rate = dsi_panel_get_refresh_rate();
-
 		scm_data[0] = level;
 		scm_data[1] = priv->bin.total_time;
-		if (refresh_rate >= 120) {
+		if (refresh_rate > 90)
 			scm_data[2] = priv->bin.busy_time + (priv->bin.busy_time >> 1);
-		} else if (refresh_rate == 90) {
+		else if (fps > 40)
 			scm_data[2] = priv->bin.busy_time + (priv->bin.busy_time >> 2);
-		} else {
-			scm_data[2] = priv->bin.busy_time;
-		}
+		else
+			scm_data[2] = priv->bin.busy_time - (priv->bin.busy_time >> 2);
 		scm_data[3] = context_count;
 		__secure_tz_update_entry3(scm_data, sizeof(scm_data),
 					&val, sizeof(val), priv);
@@ -432,6 +432,21 @@ static int tz_get_target_freq(struct devfreq *devfreq, unsigned long *freq)
 		level += val;
 		level = max(level, 0);
 		level = min_t(int, level, devfreq->profile->max_state - 1);
+	}
+
+#define HIGHEST_LEVEL 7
+#define HIGH_LEVEL (HIGHEST_LEVEL - 1)
+#define PRE_HIGH_LEVEL (HIGHEST_LEVEL - 2)
+	if (level >= HIGH_LEVEL) {
+		if (refresh_rate <= 60) {
+			if (fps <= 40) {
+				level = HIGHEST_LEVEL;
+			} else {
+				level = HIGH_LEVEL;
+			}
+		} else {
+			level = PRE_HIGH_LEVEL;
+		}
 	}
 
 	*freq = devfreq->profile->freq_table[level];

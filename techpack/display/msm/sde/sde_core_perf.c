@@ -14,6 +14,7 @@
 #include <linux/sde_rsc.h>
 #include <linux/platform_device.h>
 #include <linux/soc/qcom/llcc-qcom.h>
+#include <linux/fps_listener.h>
 
 #include "msm_prop.h"
 
@@ -192,6 +193,19 @@ static void _sde_core_perf_calc_crtc(struct sde_kms *kms,
 			sde_crtc_get_property(sde_cstate, CRTC_PROP_CORE_CLK);
 
 	_sde_core_perf_calc_doze_suspend(crtc, state, perf);
+
+	if (g_target_fps <= 10) {
+		for (i = 0; i < SDE_POWER_HANDLE_DBUS_ID_MAX; i++) {
+			perf->bw_ctl[i] = 0;
+			perf->max_per_pipe_ib[i] = 0;
+		}
+
+		/* Drop clock to absolute minimum */
+		if (kms->perf.perf_tune.min_core_clk)
+			perf->core_clk_rate = kms->perf.perf_tune.min_core_clk;
+		else
+			perf->core_clk_rate = 150000000; /* Fallback to XO */
+	}
 
 	if (!sde_cstate->bw_control) {
 		for (i = 0; i < SDE_POWER_HANDLE_DBUS_ID_MAX; i++) {

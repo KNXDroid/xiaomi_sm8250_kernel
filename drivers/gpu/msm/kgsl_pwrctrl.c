@@ -829,7 +829,7 @@ static ssize_t min_pwrlevel_store(struct device *dev,
 				struct device_attribute *attr, const char *buf,
 				size_t count)
 {
-	struct kgsl_device *device = dev_get_drvdata(dev);
+	/* struct kgsl_device *device = dev_get_drvdata(dev);
 	int ret;
 	unsigned int level = 0;
 
@@ -837,7 +837,7 @@ static ssize_t min_pwrlevel_store(struct device *dev,
 	if (ret)
 		return ret;
 
-	kgsl_pwrctrl_min_pwrlevel_set(device, level);
+	kgsl_pwrctrl_min_pwrlevel_set(device, level); */
 
 	return count;
 }

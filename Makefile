@@ -710,9 +710,44 @@ KBUILD_CFLAGS  += $(call cc-option,-mllvm -regalloc-enable-advisor=release)
 KBUILD_LDFLAGS += $(call cc-option,-mllvm -enable-ml-inliner=release)
 KBUILD_LDFLAGS += $(call cc-option,-mllvm -regalloc-enable-advisor=release)
 
-KBUILD_CFLAGS   += -march=armv8.2-a+lse+crypto+dotprod
-KBUILD_AFLAGS   += -march=armv8.2-a+lse+crypto+dotprod
+# Aggressive Inlining
+# Default is 225
+KBUILD_CFLAGS += -mllvm -inline-threshold=400
+KBUILD_CFLAGS += -mllvm -inlinehint-threshold=1000
+KBUILD_CFLAGS += -mllvm -inline-cold-callsite-threshold=25
+
+# Vectorization (Utilizing the NEON engine)
+KBUILD_CFLAGS += -O3
+KBUILD_CFLAGS += -fvectorize
+KBUILD_CFLAGS += -fslp-vectorize
+
+# Loop Unrolling (Reduces branch overhead in tight loops)
+KBUILD_CFLAGS += -mllvm -unroll-threshold=500
+KBUILD_CFLAGS += -mllvm -unroll-allow-partial
+KBUILD_CFLAGS += -mllvm -vectorize-loops
+
+# GVN-Hoist removes redundant code by moving it out of branches
+KBUILD_CFLAGS += -mllvm -enable-gvn-hoist
+# Load-PRE eliminates redundant memory loads
+KBUILD_CFLAGS += -mllvm -enable-load-pre
+# Loop-Distribute breaks large loops into smaller, cache-friendly ones
+KBUILD_CFLAGS += -mllvm -enable-loop-distribute
+
+KBUILD_CFLAGS   += -march=armv8.2-a+lse+crypto+dotprod+rcpc+crc
+KBUILD_AFLAGS   += -march=armv8.2-a+lse+crypto+dotprod+rcpc+crc
 else
+# Inlining optimization
+KBUILD_CFLAGS	+= --param max-inline-insns-single=600
+KBUILD_CFLAGS	+= --param max-inline-insns-auto=80
+
+# We limit inlining to 512B on the stack.
+KBUILD_CFLAGS	+= --param large-stack-frame=512
+
+KBUILD_CFLAGS	+= --param large-function-growth=150
+
+KBUILD_CFLAGS	+= --param inline-min-speedup=5
+KBUILD_CFLAGS	+= --param inline-unit-growth=60
+
 KBUILD_CFLAGS	+= -fgraphite-identity -floop-nest-optimize
 KBUILD_CFLAGS	+= -fipa-pta -fgcse-sm
 
