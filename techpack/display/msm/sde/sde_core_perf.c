@@ -201,10 +201,10 @@ static void _sde_core_perf_calc_crtc(struct sde_kms *kms,
 		}
 
 		/* Drop clock to absolute minimum */
-		if (kms->perf.perf_tune.min_core_clk)
-			perf->core_clk_rate = kms->perf.perf_tune.min_core_clk;
-		else
-			perf->core_clk_rate = 150000000; /* Fallback to XO */
+		// if (kms->perf.perf_tune.min_core_clk)
+		// 	perf->core_clk_rate = kms->perf.perf_tune.min_core_clk;
+		// else
+		// 	perf->core_clk_rate = 150000000; /* Fallback to XO */
 	}
 
 	if (!sde_cstate->bw_control) {
