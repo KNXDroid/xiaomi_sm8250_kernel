@@ -710,8 +710,9 @@ struct mhi_chan {
 	rwlock_t lock;
 	struct list_head node;
 
-	/* stats */
+#ifdef CONFIG_DEBUG_FS
 	u64 mode_change;
+#endif
 };
 
 struct tsync_node {
