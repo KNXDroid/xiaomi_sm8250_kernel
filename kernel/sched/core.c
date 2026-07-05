@@ -3268,10 +3268,8 @@ static void set_schedstats(bool enabled)
 
 void force_schedstat_enabled(void)
 {
-	if (!schedstat_enabled()) {
-		pr_info("kernel profiling enabled schedstats, disable via kernel.sched_schedstats.\n");
+	if (!schedstat_enabled())
 		static_branch_enable(&sched_schedstats);
-	}
 }
 
 static int __init setup_schedstats(char *str)
@@ -3293,9 +3291,6 @@ static int __init setup_schedstats(char *str)
 		ret = 1;
 	}
 out:
-	if (!ret)
-		pr_warn("Unable to parse schedstats=\n");
-
 	return ret;
 }
 __setup("schedstats=", setup_schedstats);
