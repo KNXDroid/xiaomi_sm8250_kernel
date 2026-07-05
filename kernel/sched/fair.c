@@ -5675,18 +5675,6 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
 			if (new < max_cfs_quota_period) {
 				cfs_b->period = ns_to_ktime(new);
 				cfs_b->quota *= 2;
-
-				pr_warn_ratelimited(
-	"cfs_period_timer[cpu%d]: period too short, scaling up (new cfs_period_us = %lld, cfs_quota_us = %lld)\n",
-					smp_processor_id(),
-					div_u64(new, NSEC_PER_USEC),
-					div_u64(cfs_b->quota, NSEC_PER_USEC));
-			} else {
-				pr_warn_ratelimited(
-	"cfs_period_timer[cpu%d]: period too short, but cannot scale up without losing precision (cfs_period_us = %lld, cfs_quota_us = %lld)\n",
-					smp_processor_id(),
-					div_u64(old, NSEC_PER_USEC),
-					div_u64(cfs_b->quota, NSEC_PER_USEC));
 			}
 
 			/* reset count so we don't come right back in here */
