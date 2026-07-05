@@ -13,25 +13,9 @@
 #include "dp_aux.h"
 #include "dp_display.h"
 
-#define DP_DEBUG(fmt, ...)                                                   \
-	do {                                                                 \
-		if (unlikely(drm_debug & DRM_UT_KMS))                        \
-			DRM_DEBUG("[msm-dp-debug][%-4d]"fmt, current->pid,   \
-					##__VA_ARGS__);                      \
-		else                                                         \
-			pr_debug("[drm:%s][msm-dp-debug][%-4d]"fmt, __func__,\
-				       current->pid, ##__VA_ARGS__);         \
-	} while (0)
+#define DP_DEBUG(fmt, ...)	do { } while (0)
 
-#define DP_INFO(fmt, ...)                                                    \
-	do {                                                                 \
-		if (unlikely(drm_debug & DRM_UT_KMS))                        \
-			DRM_INFO("[msm-dp-info][%-4d]"fmt, current->pid,    \
-					##__VA_ARGS__);                      \
-		else                                                         \
-			pr_info("[drm:%s][msm-dp-info][%-4d]"fmt, __func__, \
-				       current->pid, ##__VA_ARGS__);         \
-	} while (0)
+#define DP_INFO(fmt, ...)	do { } while (0)
 
 #define DP_WARN(fmt, ...)                                    \
 	pr_warn("[drm:%s][msm-dp-warn][%-4d]"fmt, __func__,  \
