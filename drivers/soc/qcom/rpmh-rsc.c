@@ -9,7 +9,9 @@
 #include <linux/delay.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
+#ifdef CONFIG_QCOM_RPMH_DEBUG
 #include <linux/ipc_logging.h>
+#endif
 #include <linux/kernel.h>
 #include <linux/list.h>
 #include <linux/of.h>
@@ -28,7 +30,13 @@
 #define CREATE_TRACE_POINTS
 #include "trace-rpmh.h"
 
+#ifdef CONFIG_QCOM_RPMH_DEBUG
 #define RSC_DRV_IPC_LOG_SIZE		2
+#define rpmh_rsc_log(drv, fmt, ...) \
+	ipc_log_string((drv)->ipc_log_ctx, fmt, ##__VA_ARGS__)
+#else
+#define rpmh_rsc_log(drv, fmt, ...) do { } while (0)
+#endif
 
 #define RSC_DRV_TCS_OFFSET		672
 #define RSC_DRV_CMD_OFFSET		20
@@ -239,7 +247,7 @@ static void __tcs_trigger(struct rsc_drv *drv, int tcs_id, bool trigger)
 		write_tcs_reg_sync(drv, RSC_DRV_CONTROL, tcs_id, enable);
 		enable |= TCS_AMC_MODE_TRIGGER;
 		write_tcs_reg(drv, RSC_DRV_CONTROL, tcs_id, enable);
-		ipc_log_string(drv->ipc_log_ctx, "TCS trigger: m=%d", tcs_id);
+		rpmh_rsc_log(drv, "TCS trigger: m=%d", tcs_id);
 	}
 }
 
@@ -291,8 +299,7 @@ static irqreturn_t tcs_tx_done(int irq, void *p)
 		}
 
 		trace_rpmh_tx_done(drv, i, req, err);
-		ipc_log_string(drv->ipc_log_ctx,
-			       "IRQ response: m=%d err=%d", i, err);
+		rpmh_rsc_log(drv, "IRQ response: m=%d err=%d", i, err);
 
 		/*
 		 * if wake tcs was re-purposed for sending active
@@ -347,10 +354,9 @@ static void __tcs_buffer_write(struct rsc_drv *drv, int tcs_id, int cmd_id,
 		write_tcs_cmd(drv, RSC_DRV_CMD_ADDR, tcs_id, j, cmd->addr);
 		write_tcs_cmd(drv, RSC_DRV_CMD_DATA, tcs_id, j, cmd->data);
 		trace_rpmh_send_msg(drv, tcs_id, j, msgid, cmd);
-		ipc_log_string(drv->ipc_log_ctx,
-			       "TCS write: m=%d n=%d msgid=%#x addr=%#x data=%#x wait=%d",
-			       tcs_id, j, msgid, cmd->addr,
-			       cmd->data, cmd->wait);
+		rpmh_rsc_log(drv,
+			     "TCS write: m=%d n=%d msgid=%#x addr=%#x data=%#x wait=%d",
+			     tcs_id, j, msgid, cmd->addr, cmd->data, cmd->wait);
 	}
 
 	write_tcs_reg(drv, RSC_DRV_CMD_WAIT_FOR_CMPL, tcs_id, cmd_complete);
@@ -462,10 +468,10 @@ int rpmh_rsc_send_data(struct rsc_drv *drv, const struct tcs_request *msg)
 	do {
 		ret = tcs_write(drv, msg);
 		if (ret == -EBUSY) {
-#ifdef QCOM_RPMH_DEBUG
+#ifdef CONFIG_QCOM_RPMH_DEBUG
 			pr_info_ratelimited("DRV:%s TCS Busy, retrying RPMH message send: addr=%#x\n",
 					    drv->name, msg->cmds[0].addr);
-#endif /* QCOM_RPMH_DEBUG */
+#endif /* CONFIG_QCOM_RPMH_DEBUG */
 			udelay(10);
 		}
 	} while (ret == -EBUSY);
@@ -640,9 +646,8 @@ int rpmh_rsc_write_pdc_data(struct rsc_drv *drv, const struct tcs_request *msg)
 		/* Only data is write capable */
 		writel_relaxed(cmd->data, addr);
 		trace_rpmh_send_msg(drv, RSC_PDC_DRV_DATA, i, 0, cmd);
-		ipc_log_string(drv->ipc_log_ctx,
-			       "PDC write: n=%d addr=%#x data=%x",
-			       i, cmd->addr, cmd->data);
+		rpmh_rsc_log(drv, "PDC write: n=%d addr=%#x data=%x",
+			     i, cmd->addr, cmd->data);
 		addr += RSC_PDC_DATA_OFFSET;
 	}
 
@@ -903,8 +908,10 @@ static int rpmh_rsc_probe(struct platform_device *pdev)
 	INIT_LIST_HEAD(&drv->client.cache);
 	INIT_LIST_HEAD(&drv->client.batch_cache);
 
+#ifdef CONFIG_QCOM_RPMH_DEBUG
 	drv->ipc_log_ctx = ipc_log_context_create(RSC_DRV_IPC_LOG_SIZE,
 						  drv->name, 0);
+#endif
 
 	dev_set_drvdata(&pdev->dev, drv);
 	__rsc_drv[__rsc_count++] = drv;

@@ -108,7 +108,9 @@ struct rsc_drv {
 	spinlock_t lock;
 	struct rpmh_ctrlr client;
 	int irq;
+#ifdef CONFIG_QCOM_RPMH_DEBUG
 	void *ipc_log_ctx;
+#endif
 };
 
 extern bool rpmh_standalone;
