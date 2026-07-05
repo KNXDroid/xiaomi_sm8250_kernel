@@ -2469,7 +2469,6 @@ static void sde_crtc_frame_event_work(struct kthread_work *work)
 		_sde_crtc_retire_event(fevent->connector, fevent->ts,
 				(fevent->event & SDE_ENCODER_FRAME_EVENT_ERROR)
 				? SDE_FENCE_SIGNAL_ERROR : SDE_FENCE_SIGNAL);
-		frame_stat_collector(0, RETIRE_FENCE_TS);
 	}
 
 	if (fevent->event & SDE_ENCODER_FRAME_EVENT_PANEL_DEAD)
@@ -3292,7 +3291,7 @@ static void sde_crtc_atomic_begin(struct drm_crtc *crtc,
 	_sde_crtc_blend_setup(crtc, old_state, true);
 	_sde_crtc_dest_scaler_setup(crtc);
 
-	if (g_panel->mi_cfg.smart_fps_support
+	if (frame_stat_is_enabled()
 		&& sde_encoder_check_curr_mode(sde_crtc->mixers[0].encoder,
 					MSM_DISPLAY_CMD_MODE) &&
 		kthread_cancel_delayed_work_sync(&sde_crtc->idle_notify_work_cmd_mode)) {
@@ -3307,7 +3306,8 @@ static void sde_crtc_atomic_begin(struct drm_crtc *crtc,
 		kthread_cancel_delayed_work_sync(&sde_crtc->idle_notify_work))
 		SDE_DEBUG("idle notify work cancelled\n");
 
-	fm_stat.idle_status = false;
+	if (frame_stat_is_enabled())
+		fm_stat.idle_status = false;
 
 	/*
 	 * Since CP properties use AXI buffer to program the
@@ -3358,9 +3358,6 @@ static void sde_crtc_atomic_flush(struct drm_crtc *crtc,
 	struct sde_kms *sde_kms;
 	int idle_time = 0;
 	static bool idle_time_enable = false;
-	ktime_t get_input_fence_ts;
-	ktime_t now;
-	s64 duration;
 
 	if (!crtc || !crtc->dev || !crtc->dev->dev_private) {
 		SDE_ERROR("invalid crtc\n");
@@ -3432,14 +3429,9 @@ static void sde_crtc_atomic_flush(struct drm_crtc *crtc,
 			sde_crtc->new_perf.llcc_active = true;
 	}
 
-	/* wait for acquire fences before anything else is done */
-	now = ktime_get();
 	_sde_crtc_wait_for_fences(crtc);
-	get_input_fence_ts = ktime_get();
-	duration = ktime_to_ns(ktime_sub(get_input_fence_ts, now));
-	frame_stat_collector(duration, GET_INPUT_FENCE_TS);
 
-	if(g_panel->mi_cfg.smart_fps_support
+	if (frame_stat_is_enabled()
 		&& sde_encoder_check_curr_mode(sde_crtc->mixers[0].encoder,
 							MSM_DISPLAY_CMD_MODE)) {
 		kthread_queue_delayed_work(&event_thread->worker,
@@ -6650,7 +6642,8 @@ static void __sde_crtc_idle_notify_work(struct kthread_work *work)
 		event.length = sizeof(u32);
 		msm_mode_object_event_notify(&crtc->base, crtc->dev,
 				&event, (u8 *)&ret);
-		fm_stat.idle_status = true;
+		if (frame_stat_is_enabled())
+			fm_stat.idle_status = true;
 
 		SDE_DEBUG("crtc[%d]: idle timeout notified\n", crtc->base.id);
 	}
@@ -6664,8 +6657,10 @@ static void __sde_crtc_idle_notify_work_cmd_mode(struct kthread_work *work)
 	if (!sde_crtc) {
 		SDE_ERROR("invalid sde crtc\n");
 	} else {
-		fm_stat.idle_status = true;
-		calc_fps(0,0);
+		if (frame_stat_is_enabled()) {
+			fm_stat.idle_status = true;
+			calc_fps(false);
+		}
 		pr_debug("idle timeout notified cmd mode\n");
 	}
 }

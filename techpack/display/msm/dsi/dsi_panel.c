@@ -4857,7 +4857,8 @@ exit_skip:
 	mi_cfg->layer_fod_unlock_success = false;
 	mi_cfg->sysfs_fod_unlock_success = false;
 	mi_cfg->fod_to_nolp = false;
-	fm_stat.idle_status = false;
+	if (frame_stat_is_enabled())
+		fm_stat.idle_status = false;
 
 
 exit:
@@ -5286,7 +5287,8 @@ int dsi_panel_enable(struct dsi_panel *panel)
 	mi_cfg->doze_brightness_state = DOZE_TO_NORMAL;
 	mi_cfg->into_aod_pending = false;
 	mi_cfg->cabc_current_status = 0;
-	fm_stat.idle_status = false;
+	if (frame_stat_is_enabled())
+		fm_stat.idle_status = false;
 
 	mutex_unlock(&panel->panel_lock);
 	display_utc_time_marker("DSI_CMD_SET_ON");
