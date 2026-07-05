@@ -8251,8 +8251,6 @@ static void uclamp_set(struct cgroup_subsys_state *css)
 			cpu_uclamp_ls_write_u64(css, NULL,
 						tgt.uclamp_latency_sensitive);
 
-			pr_info("uclamp_assist: setting values for %s: uclamp_min=%s uclamp_max=%s uclamp_latency_sensitive=%d\n",
-				tgt.name, tgt.uclamp_min, tgt.uclamp_max,tgt.uclamp_latency_sensitive);
 			return;
 		}
 	}
