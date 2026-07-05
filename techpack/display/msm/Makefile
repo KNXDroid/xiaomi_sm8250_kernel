@@ -86,8 +86,7 @@ msm_drm-$(CONFIG_DRM_SDE_RSC) += sde_rsc.o \
 
 msm_drm-$(CONFIG_DRM_SDE_EXPO) += sde/sde_expo_dim_layer.o
 
-msm_drm-$(CONFIG_DRM_MSM_DSI) += dsi/dsi_phy.o \
-	dsi/dsi_pwr.o \
+msm_drm-$(CONFIG_DRM_MSM_DSI) += dsi/dsi_pwr.o \
 	dsi/dsi_phy.o \
 	dsi/dsi_phy_hw_v2_0.o \
 	dsi/dsi_phy_hw_v3_0.o \
