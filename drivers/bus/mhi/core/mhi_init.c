@@ -1687,7 +1687,9 @@ int of_register_mhi_controller(struct mhi_controller *mhi_cntrl)
 		mhi_cntrl->mhi_sfr = sfr_info;
 	}
 
+#ifdef CONFIG_DEBUG_FS
 	mhi_cntrl->parent = debugfs_lookup(mhi_bus_type.name, NULL);
+#endif
 	mhi_cntrl->klog_lvl = MHI_MSG_LVL_ERROR;
 
 	/* adding it to this list only for debug purpose */
@@ -2114,8 +2116,9 @@ static int __init mhi_init(void)
 	mutex_init(&mhi_bus.lock);
 	INIT_LIST_HEAD(&mhi_bus.controller_list);
 
-	/* parent directory */
+#ifdef CONFIG_DEBUG_FS
 	debugfs_create_dir(mhi_bus_type.name, NULL);
+#endif
 
 	ret = bus_register(&mhi_bus_type);
 
