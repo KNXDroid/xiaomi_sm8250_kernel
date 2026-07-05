@@ -13,12 +13,8 @@
 #include <linux/i2c.h>
 #include <linux/types.h>
 
-#ifdef DEBUG
-#define DEV_DBG(fmt, args...)   pr_err("<SDEROT_ERR> " fmt, ##args)
-#else
-#define DEV_DBG(fmt, args...)   pr_debug("<SDEROT_DBG> " fmt, ##args)
-#endif
-#define DEV_INFO(fmt, args...)  pr_info("<SDEROT_INFO> " fmt, ##args)
+#define DEV_DBG(fmt, args...)   do { } while (0)
+#define DEV_INFO(fmt, args...)  do { } while (0)
 #define DEV_WARN(fmt, args...)  pr_warn("<SDEROT_WARN> " fmt, ##args)
 #define DEV_ERR(fmt, args...)   pr_err("<SDEROT_ERR> " fmt, ##args)
 

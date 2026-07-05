@@ -22,16 +22,13 @@
 #define SDE_ROT_MAX_IMG_WIDTH		0x3FFF
 #define SDE_ROT_MAX_IMG_HEIGHT		0x3FFF
 
-#define SDEROT_DBG(fmt, ...)	pr_debug("<SDEROT_DBG> " fmt, ##__VA_ARGS__)
-#define SDEROT_INFO(fmt, ...)	pr_info("<SDEROT_INFO> " fmt, ##__VA_ARGS__)
-#define SDEROT_INFO_ONCE(fmt, ...)  \
-	pr_info_once("<SDEROT_INFO> " fmt, ##__VA_ARGS__)
+#define SDEROT_DBG(fmt, ...)	do { } while (0)
+#define SDEROT_INFO(fmt, ...)	do { } while (0)
+#define SDEROT_INFO_ONCE(fmt, ...)	do { } while (0)
 #define SDEROT_WARN(fmt, ...)	pr_warn("<SDEROT_WARN> " fmt, ##__VA_ARGS__)
 #define SDEROT_ERR(fmt, ...)	pr_err("<SDEROT_ERR> " fmt, ##__VA_ARGS__)
-#define SDEDEV_DBG(dev, fmt, ...)	\
-	dev_dbg(dev, "<SDEROT_DBG> " fmt, ##__VA_ARGS__)
-#define SDEDEV_INFO(dev, fmt, ...)	\
-	dev_info(dev, "<SDEROT_INFO> " fmt, ##__VA_ARGS__)
+#define SDEDEV_DBG(dev, fmt, ...)	do { } while (0)
+#define SDEDEV_INFO(dev, fmt, ...)	do { } while (0)
 #define SDEDEV_WARN(dev, fmt, ...)	\
 	dev_warn(dev, "<SDEROT_WARN> " fmt, ##__VA_ARGS__)
 #define SDEDEV_ERR(dev, fmt, ...)	\
