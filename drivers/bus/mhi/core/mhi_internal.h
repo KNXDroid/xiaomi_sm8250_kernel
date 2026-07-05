@@ -757,7 +757,7 @@ extern struct mhi_bus mhi_bus;
 
 struct mhi_controller *find_mhi_controller_by_name(const char *name);
 
-/* debug fs related functions */
+#ifdef CONFIG_DEBUG_FS
 int mhi_debugfs_mhi_regdump_show(struct seq_file *m, void *d);
 int mhi_debugfs_mhi_vote_show(struct seq_file *m, void *d);
 int mhi_debugfs_mhi_chan_show(struct seq_file *m, void *d);
@@ -765,9 +765,12 @@ int mhi_debugfs_mhi_event_show(struct seq_file *m, void *d);
 int mhi_debugfs_mhi_states_show(struct seq_file *m, void *d);
 int mhi_debugfs_trigger_reset(void *data, u64 val);
 int mhi_debugfs_trigger_soc_reset(void *data, u64 val);
-
 void mhi_deinit_debugfs(struct mhi_controller *mhi_cntrl);
 void mhi_init_debugfs(struct mhi_controller *mhi_cntrl);
+#else
+static inline void mhi_deinit_debugfs(struct mhi_controller *mhi_cntrl) {}
+static inline void mhi_init_debugfs(struct mhi_controller *mhi_cntrl) {}
+#endif
 
 /* power management apis */
 enum MHI_PM_STATE __must_check mhi_tryset_pm_state(

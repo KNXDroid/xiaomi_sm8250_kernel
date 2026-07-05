@@ -2143,6 +2143,7 @@ error_invalid_state:
 	mutex_unlock(&mhi_chan->mutex);
 }
 
+#ifdef CONFIG_DEBUG_FS
 int mhi_debugfs_mhi_regdump_show(struct seq_file *m, void *d)
 {
 	struct mhi_controller *mhi_cntrl = m->private;
@@ -2344,6 +2345,7 @@ int mhi_debugfs_mhi_vote_show(struct seq_file *m, void *d)
 
 	return 0;
 }
+#endif
 
 /* move channel to start state */
 int mhi_prepare_for_transfer(struct mhi_device *mhi_dev)
