@@ -27,6 +27,8 @@ enum sde_rot_dbg_evtlog_flag {
 	SDE_ROT_EVTLOG_ALL = BIT(7)
 };
 
+#if defined(CONFIG_MSM_SDE_ROTATOR_EVTLOG_DEBUG) && \
+	defined(CONFIG_DEBUG_FS)
 #define SDEROT_EVTLOG(...) sde_rot_evtlog(__func__, __LINE__, \
 		SDE_ROT_EVTLOG_DEFAULT, ##__VA_ARGS__, SDE_ROT_DATA_LIMITER)
 
@@ -34,11 +36,12 @@ enum sde_rot_dbg_evtlog_flag {
 	sde_rot_evtlog_tout_handler(false, __func__, ##__VA_ARGS__, \
 		SDE_ROT_EVTLOG_TOUT_DATA_LIMITER)
 
-#if defined(CONFIG_MSM_SDE_ROTATOR_EVTLOG_DEBUG) && \
-	defined(CONFIG_DEBUG_FS)
 void sde_rot_evtlog(const char *name, int line, int flag, ...);
 void sde_rot_evtlog_tout_handler(bool queue, const char *name, ...);
 #else
+#define SDEROT_EVTLOG(...) do { } while (0)
+#define SDEROT_EVTLOG_TOUT_HANDLER(...) do { } while (0)
+
 static inline
 void sde_rot_evtlog(const char *name, int line, int flag, ...)
 {
@@ -63,7 +66,7 @@ struct sde_rotator_debug_base {
 	struct mutex buflock;
 };
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_MSM_SDE_ROTATOR_EVTLOG_DEBUG) && defined(CONFIG_DEBUG_FS)
 struct dentry *sde_rotator_create_debugfs(
 		struct sde_rotator_device *rot_dev);
 
