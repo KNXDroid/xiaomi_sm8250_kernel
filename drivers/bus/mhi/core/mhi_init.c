@@ -509,6 +509,7 @@ void mhi_deinit_dev_ctxt(struct mhi_controller *mhi_cntrl)
 	mhi_cntrl->mhi_ctxt = NULL;
 }
 
+#ifdef CONFIG_DEBUG_FS
 static int mhi_init_debugfs_mhi_states_open(struct inode *inode,
 					    struct file *fp)
 {
@@ -611,6 +612,7 @@ void mhi_deinit_debugfs(struct mhi_controller *mhi_cntrl)
 	debugfs_remove_recursive(mhi_cntrl->dentry);
 	mhi_cntrl->dentry = NULL;
 }
+#endif
 
 int mhi_init_dev_ctxt(struct mhi_controller *mhi_cntrl)
 {

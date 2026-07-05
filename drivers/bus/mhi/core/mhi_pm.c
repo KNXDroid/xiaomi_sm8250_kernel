@@ -732,6 +732,7 @@ static void mhi_pm_disable_transition(struct mhi_controller *mhi_cntrl,
 	mutex_unlock(&mhi_cntrl->pm_mutex);
 }
 
+#ifdef CONFIG_DEBUG_FS
 int mhi_debugfs_trigger_soc_reset(void *data, u64 val)
 {
 	struct mhi_controller *mhi_cntrl = data;
@@ -777,6 +778,7 @@ int mhi_debugfs_trigger_reset(void *data, u64 val)
 
 	return 0;
 }
+#endif
 
 /* queue disable transition work item */
 int mhi_queue_disable_transition(struct mhi_controller *mhi_cntrl,

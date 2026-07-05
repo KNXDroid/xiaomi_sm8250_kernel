@@ -41,6 +41,7 @@ const char * const mhi_suspend_mode_str[MHI_SUSPEND_MODE_MAX] = {
 	[MHI_FAST_LINK_ON] = "Fast Link On",
 };
 
+#ifdef CONFIG_DEBUG_FS
 int mhi_debugfs_trigger_m0(void *data, u64 val)
 {
 	struct mhi_controller *mhi_cntrl = data;
@@ -68,6 +69,7 @@ int mhi_debugfs_trigger_m3(void *data, u64 val)
 }
 DEFINE_SIMPLE_ATTRIBUTE(debugfs_trigger_m3_fops, NULL,
 			mhi_debugfs_trigger_m3, "%llu\n");
+#endif
 
 void mhi_deinit_pci_dev(struct mhi_controller *mhi_cntrl)
 {
@@ -518,13 +520,14 @@ static int mhi_qcom_power_up(struct mhi_controller *mhi_cntrl)
 	if (!ret)
 		mhi_qcom_store_hwinfo(mhi_cntrl);
 
-	/* power up create the dentry */
+#ifdef CONFIG_DEBUG_FS
 	if (mhi_cntrl->dentry) {
 		debugfs_create_file("m0", 0444, mhi_cntrl->dentry, mhi_cntrl,
 				    &debugfs_trigger_m0_fops);
 		debugfs_create_file("m3", 0444, mhi_cntrl->dentry, mhi_cntrl,
 				    &debugfs_trigger_m3_fops);
 	}
+#endif
 
 	return ret;
 }
