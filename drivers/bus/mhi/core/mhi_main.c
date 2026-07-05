@@ -989,7 +989,9 @@ static int parse_xfer_event(struct mhi_controller *mhi_cntrl,
 	} /* CC_EOT */
 	case MHI_EV_CC_OOB:
 		mhi_chan->db_cfg.db_mode = true;
+#ifdef CONFIG_DEBUG_FS
 		mhi_chan->mode_change++;
+#endif
 
 		/*
 		 * on RSC channel IPA HW has a minimum credit requirement before
@@ -1015,7 +1017,9 @@ static int parse_xfer_event(struct mhi_controller *mhi_cntrl,
 	case MHI_EV_CC_DB_MODE:
 		MHI_VERB("DB_MODE chan %d.\n", mhi_chan->chan);
 		mhi_chan->db_cfg.db_mode = true;
+#ifdef CONFIG_DEBUG_FS
 		mhi_chan->mode_change++;
+#endif
 
 		read_lock_irqsave(&mhi_cntrl->pm_lock, rflags);
 		if (tre_ring->wp != tre_ring->rp &&
