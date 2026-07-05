@@ -2803,6 +2803,7 @@ error_unlock:
 }
 EXPORT_SYMBOL(mhi_get_remote_time);
 
+#ifdef CONFIG_MHI_DEBUG
 void mhi_debug_reg_dump(struct mhi_controller *mhi_cntrl)
 {
 	enum mhi_dev_state state;
@@ -2855,6 +2856,7 @@ void mhi_debug_reg_dump(struct mhi_controller *mhi_cntrl)
 	}
 }
 EXPORT_SYMBOL(mhi_debug_reg_dump);
+#endif
 
 char *mhi_get_restart_reason(const char *name)
 {

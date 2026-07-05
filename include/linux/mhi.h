@@ -887,7 +887,11 @@ void mhi_control_error(struct mhi_controller *mhi_cntrl);
  * mhi_debug_reg_dump - dump MHI registers for debug purpose
  * @mhi_cntrl: MHI controller
  */
+#ifdef CONFIG_MHI_DEBUG
 void mhi_debug_reg_dump(struct mhi_controller *mhi_cntrl);
+#else
+static inline void mhi_debug_reg_dump(struct mhi_controller *mhi_cntrl) {}
+#endif
 
 /**
  * mhi_get_restart_reason - retrieve the subsystem failure reason
