@@ -102,7 +102,9 @@ struct mhi_netdev {
 	spinlock_t bg_lock; /* lock to access list */
 
 
+#ifdef CONFIG_DEBUG_FS
 	struct dentry *dentry;
+#endif
 	enum MHI_DEBUG_LEVEL msg_lvl;
 	enum MHI_DEBUG_LEVEL *ipc_log_lvl;
 	void *ipc_log;
@@ -942,8 +944,10 @@ static void mhi_netdev_remove(struct mhi_device *mhi_dev)
 	free_netdev(mhi_netdev->ndev);
 	mhi_netdev->ndev = NULL;
 
+#ifdef CONFIG_DEBUG_FS
 	if (!IS_ERR_OR_NULL(mhi_netdev->dentry))
 		debugfs_remove_recursive(mhi_netdev->dentry);
+#endif
 }
 
 static int mhi_netdev_match(struct device *dev, void *data)
