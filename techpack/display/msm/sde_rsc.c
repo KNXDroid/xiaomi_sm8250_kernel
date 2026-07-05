@@ -1081,7 +1081,7 @@ clk_enable_fail:
 }
 EXPORT_SYMBOL(sde_rsc_client_trigger_vote);
 
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DRM_SDE_RSC_DEBUG) && defined(CONFIG_DEBUG_FS)
 void sde_rsc_debug_dump(u32 mux_sel)
 {
 	struct sde_rsc_priv *rsc;
@@ -1384,7 +1384,7 @@ static void _sde_rsc_init_debugfs(struct sde_rsc_priv *rsc, char *name)
 static void _sde_rsc_init_debugfs(struct sde_rsc_priv *rsc, char *name)
 {
 }
-#endif /* defined(CONFIG_DEBUG_FS) */
+#endif /* defined(CONFIG_DRM_SDE_RSC_DEBUG) && defined(CONFIG_DEBUG_FS) */
 
 static void sde_rsc_deinit(struct platform_device *pdev,
 					struct sde_rsc_priv *rsc)
