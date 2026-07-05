@@ -4,7 +4,6 @@
  */
 
 #include <linux/platform_device.h>
-#include <linux/ipc_logging.h>
 #include <linux/refcount.h>
 #include <linux/device.h>
 #include <linux/module.h>
@@ -19,29 +18,11 @@
 #include <linux/uaccess.h>
 #include <linux/termios.h>
 
-/* Define IPC Logging Macros */
-#define GLINK_PKT_IPC_LOG_PAGE_CNT 2
-static void *glink_pkt_ilctxt;
-
-static int glink_pkt_debug_mask;
-module_param_named(debug_mask, glink_pkt_debug_mask, int, 0664);
-
-enum {
-	GLINK_PKT_INFO = 1U << 0,
-};
-
-#define GLINK_PKT_INFO(x, ...)						\
-do {									\
-	if (glink_pkt_debug_mask & GLINK_PKT_INFO) {			\
-		ipc_log_string(glink_pkt_ilctxt,			\
-			"[%s]: "x, __func__, ##__VA_ARGS__);		\
-	}								\
-} while (0)
+#define GLINK_PKT_INFO(x, ...) do { } while (0)
 
 #define GLINK_PKT_ERR(x, ...)						      \
 do {									      \
 	pr_err_ratelimited("[%s]: "x, __func__, ##__VA_ARGS__);		      \
-	ipc_log_string(glink_pkt_ilctxt, "[%s]: "x, __func__, ##__VA_ARGS__); \
 } while (0)
 
 #define SMD_DTR_SIG BIT(31)
@@ -870,8 +851,6 @@ static int __init glink_pkt_init(void)
 			__func__, ret);
 		return ret;
 	}
-	glink_pkt_ilctxt = ipc_log_context_create(GLINK_PKT_IPC_LOG_PAGE_CNT,
-						  "glink_pkt", 0);
 	return 0;
 }
 

@@ -27,8 +27,6 @@
 #include <linux/soc/qcom/smem_state.h>
 #include <linux/spinlock.h>
 
-#include <linux/ipc_logging.h>
-
 /*
  * The Shared Memory Point to Point (SMP2P) protocol facilitates communication
  * of a single 32-bit value between two processors.  Each value has a single
@@ -168,10 +166,7 @@ struct qcom_smp2p {
 	struct list_head outbound;
 };
 
-static void *ilc;
-#define SMP2P_LOG_PAGE_CNT 2
-#define SMP2P_INFO(x, ...)	\
-	ipc_log_string(ilc, "[%s]: "x, __func__, ##__VA_ARGS__)
+#define SMP2P_INFO(x, ...) do { } while (0)
 
 static void qcom_smp2p_kick(struct qcom_smp2p *smp2p)
 {
@@ -568,9 +563,6 @@ static int qcom_smp2p_probe(struct platform_device *pdev)
 	struct qcom_smp2p *smp2p;
 	const char *key;
 	int ret;
-
-	if (!ilc)
-		ilc = ipc_log_context_create(SMP2P_LOG_PAGE_CNT, "smp2p", 0);
 
 	smp2p = devm_kzalloc(&pdev->dev, sizeof(*smp2p), GFP_KERNEL);
 	if (!smp2p)
