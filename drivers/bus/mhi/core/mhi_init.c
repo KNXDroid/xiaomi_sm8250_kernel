@@ -103,20 +103,24 @@ const char *to_mhi_pm_state_str(enum MHI_PM_STATE state)
 void mhi_time_async_cb(struct mhi_device *mhi_dev, u32 sequence,
 		       u64 local_time, u64 remote_time)
 {
+#ifdef CONFIG_MHI_DEBUG
 	struct mhi_controller *mhi_cntrl = mhi_dev->mhi_cntrl;
 
 	MHI_LOG("Time response: seq:%x local: %llu remote: %llu (ticks)\n",
 		sequence, local_time, remote_time);
+#endif
 }
 
 void mhi_time_us_async_cb(struct mhi_device *mhi_dev, u32 sequence,
 			  u64 local_time, u64 remote_time)
 {
+#ifdef CONFIG_MHI_DEBUG
 	struct mhi_controller *mhi_cntrl = mhi_dev->mhi_cntrl;
 
 	MHI_LOG("Time response: seq:%x local: %llu remote: %llu (us)\n",
 		sequence, LOCAL_TICKS_TO_US(local_time),
 		REMOTE_TICKS_TO_US(remote_time));
+#endif
 }
 
 static ssize_t time_show(struct device *dev,

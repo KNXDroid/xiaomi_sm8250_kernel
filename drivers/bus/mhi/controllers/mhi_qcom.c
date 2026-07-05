@@ -253,9 +253,11 @@ exit_runtime_suspend:
 
 static int mhi_runtime_idle(struct device *dev)
 {
+#ifdef CONFIG_MHI_DEBUG
 	struct mhi_controller *mhi_cntrl = dev_get_drvdata(dev);
 
 	MHI_LOG("Entered returning -EBUSY\n");
+#endif
 
 	/*
 	 * RPM framework during runtime resume always calls
