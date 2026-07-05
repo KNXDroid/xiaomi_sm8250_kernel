@@ -3,7 +3,6 @@
 ccflags-y += -I$(src) -Idrivers/staging/android
 
 obj-$(CONFIG_MSM_SDE_ROTATOR) += sde_rotator_dev.o \
-	sde_rotator_dev.o \
 	sde_rotator_core.o \
 	sde_rotator_base.o \
 	sde_rotator_formats.o \
