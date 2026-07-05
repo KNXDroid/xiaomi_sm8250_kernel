@@ -5,7 +5,6 @@
 
 #include <linux/cdev.h>
 #include <linux/interrupt.h>
-#include <linux/ipc_logging.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_irq.h>
@@ -17,20 +16,10 @@
 
 #define MODULE_NAME "qsee_ipc_irq_bridge"
 #define DEVICE_NAME MODULE_NAME
-#define NUM_LOG_PAGES 4
 
-#define QIIB_DBG(x...) do { \
-	if (qiib_info->log_ctx) \
-		ipc_log_string(qiib_info->log_ctx, x); \
-	else \
-		pr_debug(x); \
-	} while (0)
+#define QIIB_DBG(x...) pr_debug(x)
 
-#define QIIB_ERR(x...) do { \
-	pr_err(x); \
-	if (qiib_info->log_ctx) \
-		ipc_log_string(qiib_info->log_ctx, x); \
-	} while (0)
+#define QIIB_ERR(x...) pr_err(x)
 
 static void qiib_cleanup(void);
 
@@ -77,7 +66,6 @@ struct qiib_dev {
  * @nprots:		Number of device nodes.
  * @classp:		Pointer to the device class.
  * @dev_num:		qiib device number.
- * @log_ctx:		pointer to the ipc logging context.
  */
 struct qiib_driver_data {
 	struct list_head list;
@@ -86,8 +74,6 @@ struct qiib_driver_data {
 	int nports;
 	struct class *classp;
 	dev_t dev_num;
-
-	void *log_ctx;
 };
 
 static struct qiib_driver_data *qiib_info;
@@ -109,13 +95,6 @@ static int qiib_driver_data_init(void)
 	INIT_LIST_HEAD(&qiib_info->list);
 	mutex_init(&qiib_info->list_lock);
 
-#ifdef CONFIG_IPC_LOGGING
-	qiib_info->log_ctx = ipc_log_context_create(NUM_LOG_PAGES,
-						"qsee_ipc_irq_bridge", 0);
-	if (!qiib_info->log_ctx)
-		QIIB_ERR("%s: unable to create logging context\n", __func__);
-#endif
-
 	return 0;
 }
 
@@ -128,8 +107,6 @@ static int qiib_driver_data_init(void)
 static void qiib_driver_data_deinit(void)
 {
 	qiib_cleanup();
-	if (!qiib_info->log_ctx)
-		ipc_log_context_destroy(qiib_info->log_ctx);
 	kfree(qiib_info);
 	qiib_info = NULL;
 }
