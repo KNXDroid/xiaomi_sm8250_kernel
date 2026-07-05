@@ -91,7 +91,6 @@ static void rmnet_ctl_dl_callback(struct mhi_device *mhi_dev,
 		return;
 	} else if (mhi_res->transaction_status ||
 		   !mhi_res->buf_addr || !mhi_res->bytes_xferd) {
-		rmnet_ctl_log_err("RXE", mhi_res->transaction_status, NULL, 0);
 		ctl_dev->dev.stats.rx_err++;
 	} else {
 		ctl_dev->dev.stats.rx_pkts++;
@@ -111,11 +110,8 @@ static void rmnet_ctl_ul_callback(struct mhi_device *mhi_dev,
 
 	if (skb) {
 		if (mhi_res->transaction_status) {
-			rmnet_ctl_log_err("TXE", mhi_res->transaction_status,
-					  skb->data, skb->len);
 			ctl_dev->dev.stats.tx_err++;
 		} else {
-			rmnet_ctl_log_debug("TXC", skb->data, skb->len);
 			ctl_dev->dev.stats.tx_complete++;
 		}
 		kfree_skb(skb);
