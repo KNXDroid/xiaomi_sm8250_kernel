@@ -164,6 +164,8 @@ struct sde_dbg_reglog {
 
 extern struct sde_dbg_reglog *sde_dbg_base_reglog;
 
+#if defined(CONFIG_DRM_MSM_SDE_DEBUG) && defined(CONFIG_DEBUG_FS)
+
 /**
  * SDE_REG_LOG - Write register write to the register log
  */
@@ -247,9 +249,6 @@ extern struct sde_dbg_reglog *sde_dbg_base_reglog;
  */
 #define SDE_DBG_CTRL(...) sde_dbg_ctrl(__func__, ##__VA_ARGS__, \
 		SDE_DBG_DUMP_DATA_LIMITER)
-
-
-#if defined(CONFIG_DEBUG_FS)
 
 /**
  * sde_evtlog_init - allocate a new event log object
@@ -468,6 +467,17 @@ void sde_rsc_debug_dump(u32 mux_sel);
 void dsi_ctrl_debug_dump(u32 *entries, u32 size);
 
 #else
+#define SDE_REG_LOG(blk_id, val, addr) do { } while (0)
+#define SDE_EVT32(...) do { } while (0)
+#define SDE_EVT32_VERBOSE(...) do { } while (0)
+#define SDE_EVT32_IRQ(...) do { } while (0)
+#define SDE_EVT32_EXTERNAL(...) do { } while (0)
+#define SDE_EVT32_REGWRITE(...) do { } while (0)
+#define SDE_DBG_DUMP(...) do { } while (0)
+#define SDE_DBG_DUMP_WQ(...) do { } while (0)
+#define SDE_DBG_DUMP_CLK_EN(...) do { } while (0)
+#define SDE_DBG_CTRL(...) do { } while (0)
+
 static inline struct sde_dbg_evtlog *sde_evtlog_init(void)
 {
 	return NULL;
@@ -507,7 +517,7 @@ static inline bool sde_evtlog_is_enabled(struct sde_dbg_evtlog *evtlog,
 
 static inline ssize_t sde_evtlog_dump_to_buffer(struct sde_dbg_evtlog *evtlog,
 		char *evtlog_buf, ssize_t evtlog_buf_size,
-		bool update_last_entry)
+		bool update_last_entry, bool full_dump)
 {
 	return 0;
 }
@@ -551,6 +561,17 @@ static inline int sde_dbg_reg_register_base(const char *name,
 	return 0;
 }
 
+static inline int sde_dbg_reg_register_cb(const char *name,
+		void (*cb)(void *), void *ptr)
+{
+	return 0;
+}
+
+static inline void sde_dbg_reg_unregister_cb(const char *name,
+		void (*cb)(void *), void *ptr)
+{
+}
+
 static inline void sde_dbg_reg_register_dump_range(const char *base_name,
 		const char *range_name, u32 offset_start, u32 offset_end,
 		uint32_t xin_id)
@@ -580,6 +601,6 @@ static inline void sde_rsc_debug_dump(u32 mux_sel)
 {
 }
 
-#endif /* defined(CONFIG_DEBUG_FS) */
+#endif /* defined(CONFIG_DRM_MSM_SDE_DEBUG) && defined(CONFIG_DEBUG_FS) */
 
 #endif /* SDE_DBG_H_ */
