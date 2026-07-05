@@ -31,8 +31,10 @@ struct arch_info {
 	u32 bus_client;
 	struct msm_pcie_register_event pcie_reg_event;
 	struct pci_saved_state *pcie_state;
+#ifdef CONFIG_IPC_LOGGING
 	void *boot_ipc_log;
 	void *tsync_ipc_log;
+#endif
 	struct mhi_device *boot_dev;
 	bool drv_connected;
 	struct notifier_block pm_notifier;
@@ -112,7 +114,9 @@ static int mhi_arch_pm_notifier(struct notifier_block *nb,
 	return NOTIFY_DONE;
 }
 
-void mhi_arch_timesync_log(struct mhi_controller *mhi_cntrl, u64 remote_time)
+#ifdef CONFIG_IPC_LOGGING
+static void mhi_arch_timesync_log(struct mhi_controller *mhi_cntrl,
+				  u64 remote_time)
 {
 	struct mhi_dev *mhi_dev = mhi_controller_get_devdata(mhi_cntrl);
 	struct arch_info *arch_info = mhi_dev->arch_info;
@@ -123,6 +127,7 @@ void mhi_arch_timesync_log(struct mhi_controller *mhi_cntrl, u64 remote_time)
 			       REMOTE_TIME_REMAINDER_US(remote_time),
 			       remote_time);
 }
+#endif
 
 static int mhi_arch_set_bus_request(struct mhi_controller *mhi_cntrl, int index)
 {
@@ -362,15 +367,19 @@ fs_initcall(proc_sdx55m_fuse_init);
 static void mhi_bl_dl_cb(struct mhi_device *mhi_device,
 			 struct mhi_result *mhi_result)
 {
+#ifdef CONFIG_IPC_LOGGING
 	struct mhi_controller *mhi_cntrl = mhi_device->mhi_cntrl;
 	struct mhi_dev *mhi_dev = mhi_controller_get_devdata(mhi_cntrl);
 	struct arch_info *arch_info = mhi_dev->arch_info;
+#endif
 	char *buf = mhi_result->buf_addr;
 	char *const_serial_number = "0x00786134 = ";
 	char *const_sdx55m_fuse = "Secure Boot: ";
 	char *pSerial_number = NULL;
 
+#ifdef CONFIG_IPC_LOGGING
 	char *token, *delim = "\n";
+#endif
 
 	/* force a null at last character */
 	buf[mhi_result->bytes_xferd - 1] = 0;
@@ -387,6 +396,7 @@ static void mhi_bl_dl_cb(struct mhi_device *mhi_device,
 			strlen("Off"));
 	}
 
+#ifdef CONFIG_IPC_LOGGING
 	if (mhi_result->bytes_xferd >= MAX_MSG_SIZE) {
 		do {
 			token = strsep((char **)&buf, delim);
@@ -397,6 +407,7 @@ static void mhi_bl_dl_cb(struct mhi_device *mhi_device,
 	} else {
 		ipc_log_string(arch_info->boot_ipc_log, "%s %s", DLOG, buf);
 	}
+#endif
 }
 
 static void mhi_bl_dummy_cb(struct mhi_device *mhi_dev,
@@ -411,8 +422,10 @@ static void mhi_bl_remove(struct mhi_device *mhi_device)
 	struct arch_info *arch_info = mhi_dev->arch_info;
 
 	arch_info->boot_dev = NULL;
+#ifdef CONFIG_IPC_LOGGING
 	ipc_log_string(arch_info->boot_ipc_log,
 		       HLOG "Received Remove notif.\n");
+#endif
 }
 
 void mhi_arch_mission_mode_enter(struct mhi_controller *mhi_cntrl)
@@ -421,8 +434,10 @@ void mhi_arch_mission_mode_enter(struct mhi_controller *mhi_cntrl)
 	struct arch_info *arch_info = mhi_dev->arch_info;
 	struct mhi_device *boot_dev = arch_info->boot_dev;
 
+#ifdef CONFIG_IPC_LOGGING
 	ipc_log_string(arch_info->boot_ipc_log,
 		       HLOG "Device entered mission mode\n");
+#endif
 
 	/* disable boot logger channel */
 	if (boot_dev)
@@ -465,20 +480,25 @@ static int mhi_arch_bw_scale(struct mhi_controller *mhi_cntrl,
 static int mhi_bl_probe(struct mhi_device *mhi_device,
 			const struct mhi_device_id *id)
 {
+#ifdef CONFIG_IPC_LOGGING
 	char node_name[32];
+#endif
 	struct mhi_controller *mhi_cntrl = mhi_device->mhi_cntrl;
 	struct mhi_dev *mhi_dev = mhi_controller_get_devdata(mhi_cntrl);
 	struct arch_info *arch_info = mhi_dev->arch_info;
 
+	arch_info->boot_dev = mhi_device;
+
+#ifdef CONFIG_IPC_LOGGING
 	snprintf(node_name, sizeof(node_name), "mhi_bl_%04x_%02u.%02u.%02u",
 		 mhi_device->dev_id, mhi_device->domain, mhi_device->bus,
 		 mhi_device->slot);
 
-	arch_info->boot_dev = mhi_device;
 	arch_info->boot_ipc_log = ipc_log_context_create(MHI_CNTRL_LOG_PAGES,
 							 node_name, 0);
 	ipc_log_string(arch_info->boot_ipc_log, HLOG
 		       "Entered SBL, Session ID:0x%x\n", mhi_cntrl->session_id);
+#endif
 
 	return 0;
 }
@@ -505,7 +525,9 @@ int mhi_arch_pcie_init(struct mhi_controller *mhi_cntrl)
 	struct mhi_dev *mhi_dev = mhi_controller_get_devdata(mhi_cntrl);
 	struct arch_info *arch_info = mhi_dev->arch_info;
 	struct mhi_link_info *cur_link_info;
+#ifdef CONFIG_IPC_LOGGING
 	char node[32];
+#endif
 	int ret;
 	u16 linkstat;
 
@@ -522,12 +544,14 @@ int mhi_arch_pcie_init(struct mhi_controller *mhi_cntrl)
 		mhi_dev->arch_info = arch_info;
 		arch_info->mhi_dev = mhi_dev;
 
+		mhi_cntrl->log_lvl = mhi_ipc_log_lvl;
+
+#ifdef CONFIG_IPC_LOGGING
 		snprintf(node, sizeof(node), "mhi_%04x_%02u.%02u.%02u",
 			 mhi_cntrl->dev_id, mhi_cntrl->domain, mhi_cntrl->bus,
 			 mhi_cntrl->slot);
 		mhi_cntrl->log_buf = ipc_log_context_create(MHI_IPC_LOG_PAGES,
 							    node, 0);
-		mhi_cntrl->log_lvl = mhi_ipc_log_lvl;
 
 		snprintf(node, sizeof(node), "mhi_cntrl_%04x_%02u.%02u.%02u",
 			 mhi_cntrl->dev_id, mhi_cntrl->domain, mhi_cntrl->bus,
@@ -542,6 +566,7 @@ int mhi_arch_pcie_init(struct mhi_controller *mhi_cntrl)
 					   MHI_TSYNC_LOG_PAGES, node, 0);
 		if (arch_info->tsync_ipc_log)
 			mhi_cntrl->tsync_log = mhi_arch_timesync_log;
+#endif
 
 		/* register for bus scale if defined */
 		arch_info->msm_bus_pdata = msm_bus_cl_get_pdata_from_dev(

@@ -572,9 +572,11 @@ static int mhi_uci_probe(struct mhi_device *mhi_dev,
 			 const struct mhi_device_id *id)
 {
 	struct uci_dev *uci_dev;
+#ifdef CONFIG_IPC_LOGGING
 	struct mhi_controller *mhi_cntrl = mhi_dev->mhi_cntrl;
-	int minor;
 	char node_name[32];
+#endif
+	int minor;
 	int dir;
 
 	uci_dev = kzalloc(sizeof(*uci_dev), GFP_KERNEL);
@@ -602,13 +604,14 @@ static int mhi_uci_probe(struct mhi_device *mhi_dev,
 				     mhi_dev->ul_chan_id);
 	set_bit(minor, uci_minors);
 
-	/* create debugging buffer */
+#ifdef CONFIG_IPC_LOGGING
 	snprintf(node_name, sizeof(node_name), "mhi_uci_%04x_%02u.%02u.%02u_%d",
 		 mhi_dev->dev_id, mhi_dev->domain, mhi_dev->bus, mhi_dev->slot,
 		 mhi_dev->ul_chan_id);
 	uci_dev->ipc_log = ipc_log_context_create(MHI_UCI_IPC_LOG_PAGES,
 						  node_name, 0);
 	uci_dev->ipc_log_lvl = &mhi_cntrl->log_lvl;
+#endif
 
 	for (dir = 0; dir < 2; dir++) {
 		struct uci_chan *uci_chan = (dir) ?

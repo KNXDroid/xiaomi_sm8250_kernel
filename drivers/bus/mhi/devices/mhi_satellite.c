@@ -1160,17 +1160,23 @@ static int mhi_sat_init(void)
 	mhi_sat_driver.subsys = subsys;
 	mhi_sat_driver.num_subsys = SUBSYS_MAX;
 	mhi_sat_driver.klog_lvl = KLOG_LVL;
+#ifdef CONFIG_IPC_LOGGING
 	mhi_sat_driver.ipc_log_lvl = IPC_LOG_LVL;
+#endif
 
 	for (i = 0; i < mhi_sat_driver.num_subsys; i++, subsys++) {
+#ifdef CONFIG_IPC_LOGGING
 		char log[32];
+#endif
 
 		subsys->name = subsys_names[i];
 		mutex_init(&subsys->cntrl_mutex);
 		spin_lock_init(&subsys->cntrl_lock);
 		INIT_LIST_HEAD(&subsys->cntrl_list);
+#ifdef CONFIG_IPC_LOGGING
 		scnprintf(log, sizeof(log), "mhi_sat_%s", subsys->name);
 		subsys->ipc_log = ipc_log_context_create(IPC_LOG_PAGES, log, 0);
+#endif
 	}
 
 	ret = register_rpmsg_driver(&mhi_sat_rpmsg_driver);
@@ -1189,7 +1195,9 @@ error_sat_register:
 error_sat_init:
 	subsys = mhi_sat_driver.subsys;
 	for (i = 0; i < mhi_sat_driver.num_subsys; i++, subsys++) {
+#ifdef CONFIG_IPC_LOGGING
 		ipc_log_context_destroy(subsys->ipc_log);
+#endif
 		mutex_destroy(&subsys->cntrl_mutex);
 	}
 	kfree(mhi_sat_driver.subsys);
