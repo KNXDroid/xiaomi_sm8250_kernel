@@ -69,7 +69,7 @@ static int __init setup_sched_thermal_decay_shift(char *str)
 	int _shift = 0;
 
 	if (kstrtoint(str, 0, &_shift))
-		pr_warn("Unable to set scheduler thermal pressure decay shift parameter\n");
+		_shift = 0;
 
 	sched_thermal_decay_shift = clamp(_shift, 0, 10);
 	return 1;
