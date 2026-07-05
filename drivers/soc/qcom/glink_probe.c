@@ -12,23 +12,14 @@
 #include <soc/qcom/subsystem_notif.h>
 #include <linux/rpmsg/qcom_glink.h>
 #include <linux/rpmsg.h>
-#include <linux/ipc_logging.h>
 
-#define GLINK_PROBE_LOG_PAGE_CNT 4
-static void *glink_ilc;
 static DEFINE_MUTEX(ssr_lock);
 
-#define GLINK_INFO(x, ...)						       \
-do {									       \
-	if (glink_ilc)							       \
-		ipc_log_string(glink_ilc, "[%s]: "x, __func__, ##__VA_ARGS__); \
-} while (0)
+#define GLINK_INFO(x, ...) do { } while (0)
 
 #define GLINK_ERR(dev, x, ...)						       \
 do {									       \
 	dev_err(dev, "[%s]: "x, __func__, ##__VA_ARGS__);		       \
-	if (glink_ilc)							       \
-		ipc_log_string(glink_ilc, "[%s]: "x, __func__, ##__VA_ARGS__); \
 } while (0)
 
 #define GLINK_SSR_DO_CLEANUP	0
@@ -453,9 +444,6 @@ static struct platform_driver glink_probe_driver = {
 static int __init glink_probe_init(void)
 {
 	int ret;
-
-	glink_ilc = ipc_log_context_create(GLINK_PROBE_LOG_PAGE_CNT,
-					   "glink_probe", 0);
 
 	ret = platform_driver_register(&glink_probe_driver);
 	if (ret) {
