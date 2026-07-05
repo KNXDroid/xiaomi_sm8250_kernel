@@ -24,16 +24,30 @@
 #define IPC_LOG_LVL (MHI_MSG_LVL_INFO)
 #define KLOG_LVL (MHI_MSG_LVL_ERROR)
 
+#ifdef CONFIG_IPC_LOGGING
+#define MHI_SUBSYS_IPC_LOG(level, tag, fmt, ...) do { \
+	if (subsys->ipc_log && mhi_sat_driver.ipc_log_lvl <= (level)) \
+		ipc_log_string(subsys->ipc_log, tag "[%s] " fmt, __func__, \
+			       ##__VA_ARGS__); \
+} while (0)
+#define MHI_SAT_IPC_LOG(level, tag, fmt, ...) do { \
+	if (subsys->ipc_log && mhi_sat_driver.ipc_log_lvl <= (level)) \
+		ipc_log_string(subsys->ipc_log, tag "[%s][%x] " fmt, \
+			       __func__, sat_cntrl->dev_id, ##__VA_ARGS__); \
+} while (0)
+#else
+#define MHI_SUBSYS_IPC_LOG(level, tag, fmt, ...)
+#define MHI_SAT_IPC_LOG(level, tag, fmt, ...)
+#endif
+
+#ifdef CONFIG_MHI_DEBUG
 #define MHI_SUBSYS_LOG(fmt, ...) do { \
 	if (!subsys) \
 		break; \
 	if (mhi_sat_driver.klog_lvl <= MHI_MSG_LVL_INFO) \
 		pr_info("[I][%s][%s] " fmt, __func__, subsys->name, \
 			##__VA_ARGS__);\
-	if (subsys->ipc_log && mhi_sat_driver.ipc_log_lvl <= \
-	    MHI_MSG_LVL_INFO) \
-		ipc_log_string(subsys->ipc_log, "[I][%s] " fmt, __func__, \
-			       ##__VA_ARGS__); \
+	MHI_SUBSYS_IPC_LOG(MHI_MSG_LVL_INFO, "[I]", fmt, ##__VA_ARGS__); \
 } while (0)
 
 #define MHI_SAT_LOG(fmt, ...) do { \
@@ -42,11 +56,12 @@
 	if (mhi_sat_driver.klog_lvl <= MHI_MSG_LVL_INFO) \
 		pr_info("[I][%s][%s][%x] " fmt, __func__, subsys->name, \
 			sat_cntrl->dev_id, ##__VA_ARGS__);\
-	if (subsys->ipc_log && mhi_sat_driver.ipc_log_lvl <= \
-	    MHI_MSG_LVL_INFO) \
-		ipc_log_string(subsys->ipc_log, "[I][%s][%x] " fmt, __func__, \
-			       sat_cntrl->dev_id, ##__VA_ARGS__); \
+	MHI_SAT_IPC_LOG(MHI_MSG_LVL_INFO, "[I]", fmt, ##__VA_ARGS__); \
 } while (0)
+#else
+#define MHI_SUBSYS_LOG(fmt, ...)
+#define MHI_SAT_LOG(fmt, ...)
+#endif
 
 #define MHI_SAT_ERR(fmt, ...) do { \
 	if (!subsys || !sat_cntrl) \
@@ -54,10 +69,7 @@
 	if (mhi_sat_driver.klog_lvl <= MHI_MSG_LVL_ERROR) \
 		pr_err("[E][%s][%s][%x] " fmt, __func__, subsys->name, \
 		       sat_cntrl->dev_id, ##__VA_ARGS__); \
-	if (subsys->ipc_log && mhi_sat_driver.ipc_log_lvl <= \
-	    MHI_MSG_LVL_ERROR) \
-		ipc_log_string(subsys->ipc_log, "[E][%s][%x] " fmt, __func__, \
-			       sat_cntrl->dev_id, ##__VA_ARGS__); \
+	MHI_SAT_IPC_LOG(MHI_MSG_LVL_ERROR, "[E]", fmt, ##__VA_ARGS__); \
 } while (0)
 
 #define MHI_SAT_ASSERT(cond, msg) do { \
@@ -426,7 +438,9 @@ static int mhi_sat_send_msg(struct mhi_sat_cntrl *sat_cntrl,
 static void mhi_sat_process_cmds(struct mhi_sat_cntrl *sat_cntrl,
 				 struct sat_header *hdr, struct sat_tre *pkt)
 {
+#ifdef CONFIG_MHI_DEBUG
 	struct mhi_sat_subsys *subsys = sat_cntrl->subsys;
+#endif
 	int num_pkts = SAT_TRE_NUM_PKTS(hdr->payload_size), i;
 
 	for (i = 0; i < num_pkts; i++, pkt++) {
@@ -619,7 +633,9 @@ static void mhi_sat_send_sys_err(struct mhi_sat_cntrl *sat_cntrl)
 static void mhi_sat_error_worker(void *data, async_cookie_t cookie)
 {
 	struct mhi_sat_cntrl *sat_cntrl = data;
+#ifdef CONFIG_MHI_DEBUG
 	struct mhi_sat_subsys *subsys = sat_cntrl->subsys;
+#endif
 	struct sat_tre *pkt;
 	void *msg;
 	int ret;
@@ -654,7 +670,9 @@ static void mhi_sat_process_worker(struct work_struct *work)
 {
 	struct mhi_sat_cntrl *sat_cntrl = container_of(work,
 					struct mhi_sat_cntrl, process_work);
+#ifdef CONFIG_MHI_DEBUG
 	struct mhi_sat_subsys *subsys = sat_cntrl->subsys;
+#endif
 	struct mhi_sat_packet *packet, *tmp;
 	struct sat_header *hdr;
 	struct sat_tre *pkt;
@@ -933,7 +951,9 @@ static void mhi_sat_dev_status_cb(struct mhi_device *mhi_dev,
 {
 	struct mhi_sat_device *sat_dev = mhi_device_get_devdata(mhi_dev);
 	struct mhi_sat_cntrl *sat_cntrl = sat_dev->cntrl;
+#ifdef CONFIG_MHI_DEBUG
 	struct mhi_sat_subsys *subsys = sat_cntrl->subsys;
+#endif
 	unsigned long flags;
 
 	if (mhi_cb != MHI_CB_FATAL_ERROR)
