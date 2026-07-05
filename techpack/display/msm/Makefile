@@ -74,7 +74,7 @@ msm_drm-$(CONFIG_DRM_MSM_SDE) += sde/sde_crtc.o \
 
 ifeq ($(CONFIG_DRM_MSM_SDE_DEBUG),y)
 msm_drm-$(CONFIG_DEBUG_FS) += sde_dbg.o \
-	sde_dbg_evtlog.o \
+	sde_dbg_evtlog.o
 endif
 
 msm_drm-$(CONFIG_DRM_SDE_WB) += sde/sde_wb.o \
