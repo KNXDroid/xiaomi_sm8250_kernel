@@ -968,9 +968,13 @@ static int mhi_netdev_probe(struct mhi_device *mhi_dev,
 	int ret;
 	struct mhi_netdev *mhi_netdev, *p_netdev = NULL;
 	struct device_node *of_node = mhi_dev->dev.of_node;
+#ifdef CONFIG_IPC_LOGGING
 	struct mhi_controller *mhi_cntrl = mhi_dev->mhi_cntrl;
+#endif
 	int nr_tre;
+#ifdef CONFIG_IPC_LOGGING
 	char node_name[32];
+#endif
 	struct device_node *phandle;
 	bool no_chain;
 
@@ -1068,7 +1072,7 @@ static int mhi_netdev_probe(struct mhi_device *mhi_dev,
 		if (IS_ERR(mhi_netdev->alloc_task))
 			return PTR_ERR(mhi_netdev->alloc_task);
 
-		/* create ipc log buffer */
+#ifdef CONFIG_IPC_LOGGING
 		snprintf(node_name, sizeof(node_name),
 			 "%s_%04x_%02u.%02u.%02u_%u",
 			 mhi_netdev->interface_name, mhi_dev->dev_id,
@@ -1077,6 +1081,7 @@ static int mhi_netdev_probe(struct mhi_device *mhi_dev,
 		mhi_netdev->ipc_log = ipc_log_context_create(IPC_LOG_PAGES,
 							     node_name, 0);
 		mhi_netdev->ipc_log_lvl = &mhi_cntrl->log_lvl;
+#endif
 
 		mhi_netdev_create_debugfs(mhi_netdev);
 	}
