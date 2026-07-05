@@ -107,9 +107,6 @@ struct mhi_netdev {
 	enum MHI_DEBUG_LEVEL *ipc_log_lvl;
 	void *ipc_log;
 
-	/* debug stats */
-	u32 abuffers, kbuffers, rbuffers;
-	bool napi_scheduled;
 };
 
 struct mhi_netdev_priv {
@@ -221,7 +218,6 @@ static int mhi_netdev_tmp_alloc(struct mhi_netdev *mhi_netdev,
 			__free_pages(mhi_buf->page, order);
 			return ret;
 		}
-		mhi_netdev->abuffers++;
 	}
 
 	return 0;
@@ -262,7 +258,6 @@ static int mhi_netdev_queue_bg_pool(struct mhi_netdev *mhi_netdev,
 			break;
 		}
 		list_del(&mhi_buf->node);
-		mhi_netdev->kbuffers++;
 	}
 
 	/* add remaining buffers back to main pool */
@@ -334,7 +329,6 @@ static void mhi_netdev_queue(struct mhi_netdev *mhi_netdev,
 			list_add(&mhi_buf->node, pool);
 			return;
 		}
-		mhi_netdev->rbuffers++;
 	}
 
 	/* recycling did not work, buffers are still busy use bg pool */
@@ -450,7 +444,6 @@ static int mhi_netdev_alloc_thread(void *data)
 
 		/* replenish the ring */
 		napi_schedule(mhi_netdev->napi);
-		mhi_netdev->napi_scheduled = true;
 
 		/* wait for buffers to run low or thread to stop */
 		wait_event_interruptible(mhi_netdev->alloc_event,
@@ -490,7 +483,6 @@ static int mhi_netdev_poll(struct napi_struct *napi, int budget)
 	if (rx_work < 0) {
 		MSG_ERR("Error polling ret:%d\n", rx_work);
 		napi_complete(napi);
-		mhi_netdev->napi_scheduled = false;
 		return 0;
 	}
 
@@ -503,7 +495,6 @@ static int mhi_netdev_poll(struct napi_struct *napi, int budget)
 	/* complete work if # of packet processed less than allocated budget */
 	if (rx_work < budget) {
 		napi_complete(napi);
-		mhi_netdev->napi_scheduled = false;
 	}
 
 	MSG_VERB("polled %d\n", rx_work);
@@ -843,7 +834,6 @@ static void mhi_netdev_status_cb(struct mhi_device *mhi_dev, enum MHI_CB mhi_cb)
 		return;
 
 	napi_schedule(mhi_netdev->napi);
-	mhi_netdev->napi_scheduled = true;
 }
 
 #ifdef CONFIG_DEBUG_FS
@@ -855,11 +845,9 @@ static int mhi_netdev_debugfs_stats_show(struct seq_file *m, void *d)
 	struct mhi_netdev *mhi_netdev = m->private;
 
 	seq_printf(m,
-		   "mru:%u order:%u pool_size:%d, bg_pool_size:%d bg_pool_limit:%d abuf:%u kbuf:%u rbuf:%u\n",
+		   "mru:%u order:%u pool_size:%d, bg_pool_size:%d bg_pool_limit:%d\n",
 		   mhi_netdev->mru, mhi_netdev->order, mhi_netdev->pool_size,
-		   mhi_netdev->bg_pool_size, mhi_netdev->bg_pool_limit,
-		   mhi_netdev->abuffers, mhi_netdev->kbuffers,
-		   mhi_netdev->rbuffers);
+		   mhi_netdev->bg_pool_size, mhi_netdev->bg_pool_limit);
 
 	seq_printf(m, "chaining SKBs:%s\n", (mhi_netdev->chain) ?
 		   "enabled" : "disabled");
@@ -1106,7 +1094,6 @@ static int mhi_netdev_probe(struct mhi_device *mhi_dev,
 	 * by triggering a napi_poll
 	 */
 	napi_schedule(mhi_netdev->napi);
-	mhi_netdev->napi_scheduled = true;
 
 	return 0;
 }
