@@ -519,7 +519,6 @@ static void sde_encoder_phys_vid_vblank_irq(void *arg, int irq_idx)
 		event = SDE_ENCODER_FRAME_EVENT_DONE |
 			SDE_ENCODER_FRAME_EVENT_SIGNAL_RETIRE_FENCE |
 			SDE_ENCODER_FRAME_EVENT_SIGNAL_RELEASE_FENCE;
-		frame_stat_collector(0, VBLANK_TS);
 	}
 
 not_flushed:

@@ -4718,8 +4718,8 @@ static void sde_encoder_touch_notify_work_handler(struct kthread_work *work)
 
 	if (dsi_display && dsi_display->panel
 		&& dsi_display->panel->mi_cfg.smart_fps_restore) {
-		if (dsi_display->panel->mi_cfg.smart_fps_support && fm_stat.enabled) {
-			calc_fps(0, (int)true);
+		if (frame_stat_is_enabled()) {
+			calc_fps(true);
 			dsi_display->panel->mi_cfg.smart_fps_restore = false;
 		}
 	}

@@ -545,11 +545,7 @@ static void _msm_drm_commit_work_cb(struct kthread_work *work)
 		.cpus_affine = BIT(raw_smp_processor_id())
 	};
 
-        ktime_t start, end;
-        s64 duration;
-        start = ktime_get();
-        frame_stat_collector(0, COMMIT_START_TS);
-
+	bool collect_frame_stats = frame_stat_is_enabled();
 
 	/*
 	 * Optimistically assume the current task won't migrate to another CPU
@@ -561,10 +557,9 @@ static void _msm_drm_commit_work_cb(struct kthread_work *work)
 	complete_commit(commit);
 	SDE_ATRACE_END("complete_commit");
 
-	end = ktime_get();
-	duration = ktime_to_ns(ktime_sub(end, start));
-	frame_stat_collector(duration, COMMIT_END_TS);
-        pm_qos_remove_request(&req);
+	if (collect_frame_stats)
+		calc_fps(false);
+	pm_qos_remove_request(&req);
 
 	complete_commit_cleanup(commit);
 }
