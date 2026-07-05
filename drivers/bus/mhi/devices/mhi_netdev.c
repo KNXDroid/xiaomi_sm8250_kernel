@@ -22,15 +22,22 @@
 #define IPC_LOG_PAGES (100)
 #define MAX_NETBUF_SIZE (128)
 
+#ifdef CONFIG_IPC_LOGGING
+#define MSG_IPC(level, tag, fmt, ...) do { \
+	if (mhi_netdev->ipc_log && (*mhi_netdev->ipc_log_lvl <= (level))) \
+		ipc_log_string(mhi_netdev->ipc_log, tag "[%s] " fmt, \
+			       __func__, ##__VA_ARGS__); \
+} while (0)
+#else
+#define MSG_IPC(level, tag, fmt, ...)
+#endif
+
 #ifdef CONFIG_MHI_DEBUG
 
 #define MSG_VERB(fmt, ...) do { \
 	if (mhi_netdev->msg_lvl <= MHI_MSG_LVL_VERBOSE) \
 		pr_err("[D][%s] " fmt, __func__, ##__VA_ARGS__);\
-	if (mhi_netdev->ipc_log && (*mhi_netdev->ipc_log_lvl <= \
-				    MHI_MSG_LVL_VERBOSE)) \
-		ipc_log_string(mhi_netdev->ipc_log, "[D][%s] " fmt, \
-			       __func__, ##__VA_ARGS__); \
+	MSG_IPC(MHI_MSG_LVL_VERBOSE, "[D]", fmt, ##__VA_ARGS__); \
 } while (0)
 
 #define MHI_NETDEV_NAPI_POLL_WEIGHT (64)
@@ -43,22 +50,20 @@
 
 #endif
 
+#ifdef CONFIG_MHI_DEBUG
 #define MSG_LOG(fmt, ...) do { \
 	if (mhi_netdev->msg_lvl <= MHI_MSG_LVL_INFO) \
 		pr_err("[I][%s] " fmt, __func__, ##__VA_ARGS__);\
-	if (mhi_netdev->ipc_log && (*mhi_netdev->ipc_log_lvl <= \
-				    MHI_MSG_LVL_INFO)) \
-		ipc_log_string(mhi_netdev->ipc_log, "[I][%s] " fmt, \
-			       __func__, ##__VA_ARGS__); \
+	MSG_IPC(MHI_MSG_LVL_INFO, "[I]", fmt, ##__VA_ARGS__); \
 } while (0)
+#else
+#define MSG_LOG(fmt, ...)
+#endif
 
 #define MSG_ERR(fmt, ...) do { \
 	if (mhi_netdev->msg_lvl <= MHI_MSG_LVL_ERROR) \
 		pr_err("[E][%s] " fmt, __func__, ##__VA_ARGS__); \
-	if (mhi_netdev->ipc_log && (*mhi_netdev->ipc_log_lvl <= \
-				    MHI_MSG_LVL_ERROR)) \
-		ipc_log_string(mhi_netdev->ipc_log, "[E][%s] " fmt, \
-			       __func__, ##__VA_ARGS__); \
+	MSG_IPC(MHI_MSG_LVL_ERROR, "[E]", fmt, ##__VA_ARGS__); \
 } while (0)
 
 #define MHI_ASSERT(cond, msg) do { \

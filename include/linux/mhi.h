@@ -948,15 +948,23 @@ char *mhi_get_restart_reason(const char *name);
 
 #include <linux/ipc_logging.h>
 
+#ifdef CONFIG_IPC_LOGGING
+#define MHI_IPC_LOG_BUF(buf, level, tag, fmt, ...) do { \
+		if ((buf) && (mhi_cntrl->log_lvl <= (level))) \
+			ipc_log_string((buf), tag "[%s] " fmt, __func__, \
+				       ##__VA_ARGS__); \
+} while (0)
+#else
+#define MHI_IPC_LOG_BUF(buf, level, tag, fmt, ...)
+#endif
+
 #ifdef CONFIG_MHI_DEBUG
 
 #define MHI_VERB(fmt, ...) do { \
 		if (mhi_cntrl->klog_lvl <= MHI_MSG_LVL_VERBOSE) \
 			pr_err("[D][%s] " fmt, __func__, ##__VA_ARGS__);\
-		if (mhi_cntrl->log_buf && \
-		    (mhi_cntrl->log_lvl <= MHI_MSG_LVL_VERBOSE)) \
-			ipc_log_string(mhi_cntrl->log_buf, "[D][%s] " fmt, \
-				       __func__, ##__VA_ARGS__); \
+		MHI_IPC_LOG_BUF(mhi_cntrl->log_buf, MHI_MSG_LVL_VERBOSE, \
+				"[D]", fmt, ##__VA_ARGS__); \
 } while (0)
 
 #else
@@ -970,20 +978,15 @@ char *mhi_get_restart_reason(const char *name);
 #define MHI_CNTRL_LOG(fmt, ...) do { \
 		if (mhi_cntrl->klog_lvl <= MHI_MSG_LVL_INFO) \
 			pr_err("[I][%s] " fmt, __func__, ##__VA_ARGS__);\
-		if (mhi_cntrl->cntrl_log_buf && \
-		    (mhi_cntrl->log_lvl <= MHI_MSG_LVL_INFO)) \
-			ipc_log_string(mhi_cntrl->cntrl_log_buf, \
-				       "[I][%s] " fmt, __func__, \
-				       ##__VA_ARGS__); \
+		MHI_IPC_LOG_BUF(mhi_cntrl->cntrl_log_buf, \
+				MHI_MSG_LVL_INFO, "[I]", fmt, ##__VA_ARGS__); \
 } while (0)
 
 #define MHI_LOG(fmt, ...) do {	\
 		if (mhi_cntrl->klog_lvl <= MHI_MSG_LVL_INFO) \
 			pr_err("[I][%s] " fmt, __func__, ##__VA_ARGS__);\
-		if (mhi_cntrl->log_buf && \
-		    (mhi_cntrl->log_lvl <= MHI_MSG_LVL_INFO)) \
-			ipc_log_string(mhi_cntrl->log_buf, "[I][%s] " fmt, \
-				       __func__, ##__VA_ARGS__); \
+		MHI_IPC_LOG_BUF(mhi_cntrl->log_buf, MHI_MSG_LVL_INFO, \
+				"[I]", fmt, ##__VA_ARGS__); \
 } while (0)
 
 #else
@@ -996,29 +999,22 @@ char *mhi_get_restart_reason(const char *name);
 #define MHI_CNTRL_ERR(fmt, ...) do { \
 		if (mhi_cntrl->klog_lvl <= MHI_MSG_LVL_ERROR) \
 			pr_err("[E][%s] " fmt, __func__, ##__VA_ARGS__); \
-		if (mhi_cntrl->cntrl_log_buf && \
-		    (mhi_cntrl->log_lvl <= MHI_MSG_LVL_ERROR)) \
-			ipc_log_string(mhi_cntrl->cntrl_log_buf, \
-				       "[E][%s] " fmt, __func__, \
-				       ##__VA_ARGS__); \
+		MHI_IPC_LOG_BUF(mhi_cntrl->cntrl_log_buf, \
+				MHI_MSG_LVL_ERROR, "[E]", fmt, ##__VA_ARGS__); \
 } while (0)
 
 #define MHI_ERR(fmt, ...) do {	\
 		if (mhi_cntrl->klog_lvl <= MHI_MSG_LVL_ERROR) \
 			pr_err("[E][%s] " fmt, __func__, ##__VA_ARGS__); \
-		if (mhi_cntrl->log_buf && \
-		    (mhi_cntrl->log_lvl <= MHI_MSG_LVL_ERROR)) \
-			ipc_log_string(mhi_cntrl->log_buf, "[E][%s] " fmt, \
-				       __func__, ##__VA_ARGS__); \
+		MHI_IPC_LOG_BUF(mhi_cntrl->log_buf, MHI_MSG_LVL_ERROR, \
+				"[E]", fmt, ##__VA_ARGS__); \
 } while (0)
 
 #define MHI_CRITICAL(fmt, ...) do { \
 		if (mhi_cntrl->klog_lvl <= MHI_MSG_LVL_CRITICAL) \
 			pr_err("[C][%s] " fmt, __func__, ##__VA_ARGS__); \
-		if (mhi_cntrl->log_buf && \
-		    (mhi_cntrl->log_lvl <= MHI_MSG_LVL_CRITICAL)) \
-			ipc_log_string(mhi_cntrl->log_buf, "[C][%s] " fmt, \
-				       __func__, ##__VA_ARGS__); \
+		MHI_IPC_LOG_BUF(mhi_cntrl->log_buf, MHI_MSG_LVL_CRITICAL, \
+				"[C]", fmt, ##__VA_ARGS__); \
 } while (0)
 
 #endif
