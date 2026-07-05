@@ -781,13 +781,10 @@ static void replenish_dl_entity(struct sched_dl_entity *dl_se,
 	 * At this point, the deadline really should be "in
 	 * the future" with respect to rq->clock. If it's
 	 * not, we are, for some reason, lagging too much!
-	 * Anyway, after having warn userspace abut that,
-	 * we still try to keep the things running by
-	 * resetting the deadline and the budget of the
-	 * entity.
+	 * Keep things running by resetting the deadline and
+	 * the budget of the entity.
 	 */
 	if (dl_time_before(dl_se->deadline, rq_clock(rq))) {
-		printk_deferred_once("sched: DL replenish lagged too much\n");
 		dl_se->deadline = rq_clock(rq) + pi_se->dl_deadline;
 		dl_se->runtime = pi_se->dl_runtime;
 	}
