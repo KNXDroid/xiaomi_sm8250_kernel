@@ -357,9 +357,6 @@ static void wda_svc_config(struct work_struct *work)
 				  data->svc.iface_id);
 
 	rtnl_unlock();
-
-	pr_info("Connection established with the WDA Service, DL Marker %s\n",
-		dl_marker ? "enabled" : "disabled");
 }
 
 static int wda_svc_arrive(struct qmi_handle *qmi, struct qmi_service *svc)
@@ -378,11 +375,6 @@ static int wda_svc_arrive(struct qmi_handle *qmi, struct qmi_service *svc)
 
 static void wda_svc_exit(struct qmi_handle *qmi, struct qmi_service *svc)
 {
-	struct wda_qmi_data *data = container_of(qmi, struct wda_qmi_data,
-						 handle);
-
-	if (!data)
-		pr_info("%s() data is null\n", __func__);
 }
 
 static struct qmi_ops server_ops = {
@@ -445,10 +437,8 @@ void wda_qmi_client_exit(void *wda_data)
 {
 	struct wda_qmi_data *data = (struct wda_qmi_data *)wda_data;
 
-	if (!data) {
-		pr_info("%s() data is null\n", __func__);
+	if (!data)
 		return;
-	}
 
 	data->restart_state = 1;
 	trace_wda_client_state_down(0);
