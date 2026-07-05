@@ -37,12 +37,7 @@
 
 #else
 
-#define MSG_VERB(fmt, ...) do { \
-	if (mhi_netdev->ipc_log && (*mhi_netdev->ipc_log_lvl <= \
-				    MHI_MSG_LVL_VERBOSE)) \
-		ipc_log_string(mhi_netdev->ipc_log, "[D][%s] " fmt, \
-			       __func__, ##__VA_ARGS__); \
-} while (0)
+#define MSG_VERB(fmt, ...)
 
 #define MHI_NETDEV_NAPI_POLL_WEIGHT (128)
 

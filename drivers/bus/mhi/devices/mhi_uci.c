@@ -78,12 +78,7 @@ enum MHI_DEBUG_LEVEL msg_lvl = MHI_MSG_LVL_ERROR;
 #else
 
 #define MHI_UCI_IPC_LOG_PAGES (1)
-#define MSG_VERB(fmt, ...) do { \
-		if (uci_dev->ipc_log && uci_dev->ipc_log_lvl && \
-		    (*uci_dev->ipc_log_lvl <= MHI_MSG_LVL_VERBOSE)) \
-			ipc_log_string(uci_dev->ipc_log, \
-				"[D][%s] " fmt, __func__, ##__VA_ARGS__); \
-	} while (0)
+#define MSG_VERB(fmt, ...)
 
 #endif
 
