@@ -497,8 +497,6 @@ int dfc_qmap_client_init(void *port, int index, struct svc_info *psvc,
 	trace_dfc_client_state_up(data->index, data->svc.instance,
 				  data->svc.ep_type, data->svc.iface_id);
 
-	pr_info("DFC QMAP init\n");
-
 	dfc_qmap_send_config(data);
 
 	return 0;
@@ -522,6 +520,4 @@ void dfc_qmap_client_exit(void *dfc_data)
 	synchronize_rcu();
 
 	kfree(data);
-
-	pr_info("DFC QMAP exit\n");
 }

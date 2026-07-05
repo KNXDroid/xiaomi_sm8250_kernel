@@ -167,8 +167,6 @@ static int rmnet_ctl_probe(struct mhi_device *mhi_dev,
 
 	rmnet_ctl_endpoint_setdev(&ctl_dev->dev);
 
-	pr_info("rmnet_ctl driver probed\n");
-
 	return 0;
 }
 
@@ -177,8 +175,6 @@ static void rmnet_ctl_remove(struct mhi_device *mhi_dev)
 	rmnet_ctl_endpoint_setdev(NULL);
 	synchronize_rcu();
 	dev_set_drvdata(&mhi_dev->dev, NULL);
-
-	pr_info("rmnet_ctl driver removed\n");
 }
 
 static const struct mhi_device_id rmnet_ctl_mhi_match[] = {
