@@ -89,13 +89,10 @@ static int compat_get_qseecom_send_modfd_cmd_req(
 		struct qseecom_send_modfd_cmd_req __user *data)
 {
 	int err;
-	unsigned int i;
 	compat_uptr_t cmd_req_buf;
 	compat_uint_t cmd_req_len;
 	compat_uptr_t resp_buf;
 	compat_uint_t resp_len;
-	compat_long_t fd;
-	compat_ulong_t cmd_buf_offset;
 
 	err = get_user(cmd_req_buf, &data32->cmd_req_buf);
 	err |= put_user(NULL, &data->cmd_req_buf);
@@ -107,14 +104,8 @@ static int compat_get_qseecom_send_modfd_cmd_req(
 	err |= put_user(resp_buf, (compat_uptr_t *)&data->resp_buf);
 	err |= get_user(resp_len, &data32->resp_len);
 	err |= put_user(resp_len, &data->resp_len);
-	for (i = 0; i < MAX_ION_FD; i++) {
-		err |= get_user(fd, &data32->ifd_data[i].fd);
-		err |= put_user(fd, &data->ifd_data[i].fd);
-		err |= get_user(cmd_buf_offset,
-				&data32->ifd_data[i].cmd_buf_offset);
-		err |= put_user(cmd_buf_offset,
-				&data->ifd_data[i].cmd_buf_offset);
-	}
+	err |= copy_in_user(data->ifd_data, data32->ifd_data,
+			    sizeof(data->ifd_data));
 	return err;
 }
 
@@ -297,26 +288,16 @@ static int compat_get_qseecom_send_modfd_listener_resp(
 		struct qseecom_send_modfd_listener_resp __user *data)
 {
 	int err;
-	unsigned int i;
 	compat_uptr_t resp_buf_ptr;
 	compat_uint_t resp_len;
-	compat_long_t fd;
-	compat_ulong_t cmd_buf_offset;
 
 	err = get_user(resp_buf_ptr, &data32->resp_buf_ptr);
 	err |= put_user(NULL, &data->resp_buf_ptr);
 	err |= put_user(resp_buf_ptr, (compat_uptr_t *)&data->resp_buf_ptr);
 	err |= get_user(resp_len, &data32->resp_len);
 	err |= put_user(resp_len, &data->resp_len);
-
-	for (i = 0; i < MAX_ION_FD; i++) {
-		err |= get_user(fd, &data32->ifd_data[i].fd);
-		err |= put_user(fd, &data->ifd_data[i].fd);
-		err |= get_user(cmd_buf_offset,
-				&data32->ifd_data[i].cmd_buf_offset);
-		err |= put_user(cmd_buf_offset,
-				&data->ifd_data[i].cmd_buf_offset);
-	}
+	err |= copy_in_user(data->ifd_data, data32->ifd_data,
+			    sizeof(data->ifd_data));
 	return err;
 }
 
@@ -353,9 +334,7 @@ static int compat_get_qseecom_qteec_modfd_req(
 	compat_ulong_t req_len;
 	compat_uptr_t resp_ptr;
 	compat_ulong_t resp_len;
-	compat_long_t fd;
-	compat_ulong_t cmd_buf_offset;
-	int err, i;
+	int err;
 
 	err = get_user(req_ptr, &data32->req_ptr);
 	err |= put_user(NULL, &data->req_ptr);
@@ -368,15 +347,8 @@ static int compat_get_qseecom_qteec_modfd_req(
 	err |= put_user(resp_ptr, (compat_uptr_t *)&data->resp_ptr);
 	err |= get_user(resp_len, &data32->resp_len);
 	err |= put_user(resp_len, &data->resp_len);
-
-	for (i = 0; i < MAX_ION_FD; i++) {
-		err |= get_user(fd, &data32->ifd_data[i].fd);
-		err |= put_user(fd, &data->ifd_data[i].fd);
-		err |= get_user(cmd_buf_offset,
-				&data32->ifd_data[i].cmd_buf_offset);
-		err |= put_user(cmd_buf_offset,
-				&data->ifd_data[i].cmd_buf_offset);
-	}
+	err |= copy_in_user(data->ifd_data, data32->ifd_data,
+			    sizeof(data->ifd_data));
 	return err;
 }
 
