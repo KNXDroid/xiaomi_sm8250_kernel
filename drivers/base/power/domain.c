@@ -1432,8 +1432,8 @@ int pm_genpd_add_device(struct generic_pm_domain *genpd, struct device *dev)
 }
 EXPORT_SYMBOL_GPL(pm_genpd_add_device);
 
-static int genpd_remove_device(struct generic_pm_domain *genpd,
-			       struct device *dev)
+static noinline int genpd_remove_device(struct generic_pm_domain *genpd,
+					struct device *dev)
 {
 	struct generic_pm_domain_data *gpd_data;
 	struct pm_domain_data *pdd;
