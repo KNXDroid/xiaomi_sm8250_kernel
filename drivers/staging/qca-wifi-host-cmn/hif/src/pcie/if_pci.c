@@ -20,6 +20,7 @@
 #include <linux/slab.h>
 #include <linux/interrupt.h>
 #include <linux/if_arp.h>
+#include <linux/delay.h>
 #ifdef CONFIG_PCI_MSM
 #include <linux/msm_pcie.h>
 #endif
@@ -512,7 +513,7 @@ static void hif_pci_device_warm_reset(struct hif_pci_softc *sc)
 		       (SOC_CORE_BASE_ADDRESS + PCIE_INTR_CLR_ADDRESS)),
 		       HOST_GROUP0_MASK);
 
-	qdf_mdelay(100);
+	msleep(100);
 
 	/* Clear FW_INDICATOR_ADDRESS */
 	if (HAS_FW_INDICATOR)
@@ -536,13 +537,13 @@ static void hif_pci_device_warm_reset(struct hif_pci_softc *sc)
 	val |= SOC_RESET_CONTROL_CE_RST_MASK;
 	hif_write32_mb(sc, reset_addr, val);
 	val = hif_read32_mb(sc, reset_addr);
-	qdf_mdelay(10);
+	msleep(10);
 
 	/* CE unreset */
 	val &= ~SOC_RESET_CONTROL_CE_RST_MASK;
 	hif_write32_mb(sc, reset_addr, val);
 	val = hif_read32_mb(sc, reset_addr);
-	qdf_mdelay(10);
+	msleep(10);
 
 	/* Read Target CPU Intr Cause */
 	val = hif_read32_mb(sc, mem +
@@ -558,7 +559,7 @@ static void hif_pci_device_warm_reset(struct hif_pci_softc *sc)
 	HIF_INFO_MED("%s: RESET_CONTROL after cpu warm reset 0x%x",
 		    __func__, val);
 
-	qdf_mdelay(100);
+	msleep(100);
 	HIF_INFO_MED("%s: Target Warm reset complete", __func__);
 
 }
