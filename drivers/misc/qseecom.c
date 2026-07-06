@@ -4572,7 +4572,6 @@ static int __qseecom_get_fw_size(const char *appname, uint32_t *fw_size,
 	release_firmware(fw_entry);
 	fw_entry = NULL;
 	for (i = 0; i < num_images; i++) {
-		memset(fw_name, 0, sizeof(fw_name));
 		snprintf(fw_name, ARRAY_SIZE(fw_name), "%s.b%02d", appname, i);
 		ret = firmware_request_nowarn(&fw_entry, fw_name, qseecom.pdev);
 		if (ret)
