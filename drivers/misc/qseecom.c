@@ -7547,6 +7547,61 @@ static void __qseecom_clean_data_sglistinfo(struct qseecom_dev_handle *data)
 	}
 }
 
+static int __qseecom_prepare_client_send(struct qseecom_dev_handle *data,
+					 bool *perf_enabled)
+{
+	int ret;
+
+	*perf_enabled = false;
+
+	if (qseecom.support_bus_scaling) {
+		/* register bus bw in case the client doesn't do it */
+		if (!data->mode) {
+			mutex_lock(&qsee_bw_mutex);
+			__qseecom_register_bus_bandwidth_needs(data, HIGH);
+			mutex_unlock(&qsee_bw_mutex);
+		}
+		ret = qseecom_scale_bus_bandwidth_timer(INACTIVE);
+		if (ret) {
+			pr_err("Failed to set bw.\n");
+			return -EINVAL;
+		}
+	}
+
+	/*
+	 * On targets where crypto clock is handled by HLOS, if clk_access_cnt
+	 * is zero and perf_enabled is false, vote clocks for this command.
+	 */
+	if (!qseecom.no_clock_support &&
+		!qseecom.qsee.clk_access_cnt && !data->perf_enabled) {
+		pr_debug("ce clock is not enabled!\n");
+		ret = qseecom_perf_enable(data);
+		if (ret) {
+			pr_err("Failed to vote for clock with err %d\n", ret);
+			return -EINVAL;
+		}
+		*perf_enabled = true;
+	}
+
+	atomic_inc(&data->ioctl_count);
+
+	return 0;
+}
+
+static void __qseecom_finish_client_send(struct qseecom_dev_handle *data,
+					 bool perf_enabled)
+{
+	if (qseecom.support_bus_scaling)
+		__qseecom_add_bw_scale_down_timer(
+			QSEECOM_SEND_CMD_CRYPTO_TIMEOUT);
+	if (perf_enabled) {
+		qsee_disable_clock_vote(data, CLK_DFAB);
+		qsee_disable_clock_vote(data, CLK_SFPB);
+	}
+	atomic_dec(&data->ioctl_count);
+	wake_up_all(&data->abort_wq);
+}
+
 static long qseecom_ioctl(struct file *file,
 			unsigned int cmd, unsigned long arg)
 {
@@ -7620,52 +7675,13 @@ static long qseecom_ioctl(struct file *file,
 		}
 		/* Only one client allowed here at a time */
 		mutex_lock(&app_access_lock);
-		if (qseecom.support_bus_scaling) {
-			/* register bus bw in case the client doesn't do it */
-			if (!data->mode) {
-				mutex_lock(&qsee_bw_mutex);
-				__qseecom_register_bus_bandwidth_needs(
-								data, HIGH);
-				mutex_unlock(&qsee_bw_mutex);
-			}
-			ret = qseecom_scale_bus_bandwidth_timer(INACTIVE);
-			if (ret) {
-				pr_err("Failed to set bw.\n");
-				ret = -EINVAL;
-				mutex_unlock(&app_access_lock);
-				break;
-			}
+		ret = __qseecom_prepare_client_send(data, &perf_enabled);
+		if (ret) {
+			mutex_unlock(&app_access_lock);
+			break;
 		}
-		/*
-		 * On targets where crypto clock is handled by HLOS,
-		 * if clk_access_cnt is zero and perf_enabled is false,
-		 * then the crypto clock was not enabled before sending cmd to
-		 * tz, qseecom will enable the clock to avoid service failure.
-		 */
-		if (!qseecom.no_clock_support &&
-			!qseecom.qsee.clk_access_cnt && !data->perf_enabled) {
-			pr_debug("ce clock is not enabled!\n");
-			ret = qseecom_perf_enable(data);
-			if (ret) {
-				pr_err("Failed to vote for clock with err %d\n",
-						ret);
-				mutex_unlock(&app_access_lock);
-				ret = -EINVAL;
-				break;
-			}
-			perf_enabled = true;
-		}
-		atomic_inc(&data->ioctl_count);
 		ret = qseecom_send_cmd(data, argp);
-		if (qseecom.support_bus_scaling)
-			__qseecom_add_bw_scale_down_timer(
-				QSEECOM_SEND_CMD_CRYPTO_TIMEOUT);
-		if (perf_enabled) {
-			qsee_disable_clock_vote(data, CLK_DFAB);
-			qsee_disable_clock_vote(data, CLK_SFPB);
-		}
-		atomic_dec(&data->ioctl_count);
-		wake_up_all(&data->abort_wq);
+		__qseecom_finish_client_send(data, perf_enabled);
 		mutex_unlock(&app_access_lock);
 		if (ret)
 			pr_err("failed qseecom_send_cmd: %d\n", ret);
@@ -7682,54 +7698,16 @@ static long qseecom_ioctl(struct file *file,
 		}
 		/* Only one client allowed here at a time */
 		mutex_lock(&app_access_lock);
-		if (qseecom.support_bus_scaling) {
-			if (!data->mode) {
-				mutex_lock(&qsee_bw_mutex);
-				__qseecom_register_bus_bandwidth_needs(
-								data, HIGH);
-				mutex_unlock(&qsee_bw_mutex);
-			}
-			ret = qseecom_scale_bus_bandwidth_timer(INACTIVE);
-			if (ret) {
-				pr_err("Failed to set bw.\n");
-				mutex_unlock(&app_access_lock);
-				ret = -EINVAL;
-				break;
-			}
+		ret = __qseecom_prepare_client_send(data, &perf_enabled);
+		if (ret) {
+			mutex_unlock(&app_access_lock);
+			break;
 		}
-		/*
-		 * On targets where crypto clock is handled by HLOS,
-		 * if clk_access_cnt is zero and perf_enabled is false,
-		 * then the crypto clock was not enabled before sending cmd to
-		 * tz, qseecom will enable the clock to avoid service failure.
-		 */
-		if (!qseecom.no_clock_support &&
-			!qseecom.qsee.clk_access_cnt && !data->perf_enabled) {
-			pr_debug("ce clock is not enabled!\n");
-			ret = qseecom_perf_enable(data);
-			if (ret) {
-				pr_err("Failed to vote for clock with err %d\n",
-						ret);
-				mutex_unlock(&app_access_lock);
-				ret = -EINVAL;
-				break;
-			}
-			perf_enabled = true;
-		}
-		atomic_inc(&data->ioctl_count);
 		if (cmd == QSEECOM_IOCTL_SEND_MODFD_CMD_REQ)
 			ret = qseecom_send_modfd_cmd(data, argp);
 		else
 			ret = qseecom_send_modfd_cmd_64(data, argp);
-		if (qseecom.support_bus_scaling)
-			__qseecom_add_bw_scale_down_timer(
-				QSEECOM_SEND_CMD_CRYPTO_TIMEOUT);
-		if (perf_enabled) {
-			qsee_disable_clock_vote(data, CLK_DFAB);
-			qsee_disable_clock_vote(data, CLK_SFPB);
-		}
-		atomic_dec(&data->ioctl_count);
-		wake_up_all(&data->abort_wq);
+		__qseecom_finish_client_send(data, perf_enabled);
 		mutex_unlock(&app_access_lock);
 		if (ret)
 			pr_err("failed qseecom_send_cmd: %d\n", ret);
