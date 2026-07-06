@@ -693,7 +693,7 @@ static int ipa3_ioctl_add_rt_rule_v2(unsigned long arg)
 {
 	int retval = 0;
 	int i;
-	u8 header[128] = { 0 };
+	u8 header[128];
 	int pre_entry;
 	u32 usr_pyld_sz;
 	u32 pyld_sz;
@@ -806,7 +806,7 @@ static int ipa3_ioctl_add_rt_rule_ext_v2(unsigned long arg)
 {
 	int retval = 0;
 	int i;
-	u8 header[128] = { 0 };
+	u8 header[128];
 	int pre_entry;
 	u32 usr_pyld_sz;
 	u32 pyld_sz;
@@ -924,7 +924,7 @@ static int ipa3_ioctl_add_rt_rule_after_v2(unsigned long arg)
 {
 	int retval = 0;
 	int i;
-	u8 header[128] = { 0 };
+	u8 header[128];
 	int pre_entry;
 	u32 usr_pyld_sz;
 	u32 pyld_sz;
@@ -1038,7 +1038,7 @@ static int ipa3_ioctl_mdfy_rt_rule_v2(unsigned long arg)
 {
 	int retval = 0;
 	int i;
-	u8 header[128] = { 0 };
+	u8 header[128];
 	int pre_entry;
 	u32 usr_pyld_sz;
 	u32 pyld_sz;
@@ -1152,7 +1152,7 @@ static int ipa3_ioctl_add_flt_rule_v2(unsigned long arg)
 {
 	int retval = 0;
 	int i;
-	u8 header[128] = { 0 };
+	u8 header[128];
 	int pre_entry;
 	u32 usr_pyld_sz;
 	u32 pyld_sz;
@@ -1264,7 +1264,7 @@ static int ipa3_ioctl_add_flt_rule_after_v2(unsigned long arg)
 {
 	int retval = 0;
 	int i;
-	u8 header[128] = { 0 };
+	u8 header[128];
 	int pre_entry;
 	u32 usr_pyld_sz;
 	u32 pyld_sz;
@@ -1378,7 +1378,7 @@ static int ipa3_ioctl_mdfy_flt_rule_v2(unsigned long arg)
 {
 	int retval = 0;
 	int i;
-	u8 header[128] = { 0 };
+	u8 header[128];
 	int pre_entry;
 	u32 usr_pyld_sz;
 	u32 pyld_sz;
@@ -1491,7 +1491,7 @@ free_param_kptr:
 static int ipa3_ioctl_fnr_counter_alloc(unsigned long arg)
 {
 	int retval = 0;
-	u8 header[128] = { 0 };
+	u8 header[128];
 
 	if (copy_from_user(header, (const void __user *)arg,
 		sizeof(struct ipa_ioc_flt_rt_counter_alloc))) {
@@ -1535,7 +1535,7 @@ static int ipa3_ioctl_fnr_counter_query(unsigned long arg)
 {
 	int retval = 0;
 	int i;
-	u8 header[128] = { 0 };
+	u8 header[128];
 	int pre_entry;
 	u32 usr_pyld_sz;
 	u32 pyld_sz;
@@ -1632,7 +1632,7 @@ free_param_kptr:
 
 static int ipa3_ioctl_fnr_counter_set(unsigned long arg)
 {
-	u8 header[128] = { 0 };
+	u8 header[128];
 	uint8_t value;
 
 	if (copy_from_user(header, (const void __user *)arg,
