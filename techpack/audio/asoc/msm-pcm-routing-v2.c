@@ -30838,9 +30838,17 @@ static int msm_routing_put_device_pp_params_mixer(struct snd_kcontrol *kcontrol,
 	int index, be_idx, i, topo_id, idx;
 	bool mute;
 	int latency, session_type;
+	int pp_value = ucontrol->value.integer.value[1];
 	bool compr_passthr_mode = true;
 
 	pr_debug("%s: pp_id: 0x%x\n", __func__, pp_id);
+
+	if (pp_id != ADM_PP_PARAM_MUTE_ID &&
+	    pp_id != ADM_PP_PARAM_LATENCY_ID) {
+		pr_debug("%s, device pp param %d not supported\n",
+			__func__, pp_id);
+		return 0;
+	}
 
 	for (be_idx = 0; be_idx < MSM_BACKEND_DAI_MAX; be_idx++) {
 		port_id = msm_bedais[be_idx].port_id;
@@ -30887,33 +30895,25 @@ static int msm_routing_put_device_pp_params_mixer(struct snd_kcontrol *kcontrol,
 		pr_debug("%s: port: 0x%x, copp %ld, be active: %d, passt: %d\n",
 			 __func__, port_id, copp, msm_bedais[be_idx].active,
 			 fe_dai_map[i][session_type].passthr_mode);
-		switch (pp_id) {
-		case ADM_PP_PARAM_MUTE_ID:
+		if (pp_id == ADM_PP_PARAM_MUTE_ID) {
 			pr_debug("%s: ADM_PP_PARAM_MUTE\n", __func__);
-			mute = ucontrol->value.integer.value[1] ? true : false;
+			mute = pp_value ? true : false;
 			msm_bedais_pp_params[index].mute_on = mute;
 			set_bit(ADM_PP_PARAM_MUTE_BIT,
 				&msm_bedais_pp_params[index].pp_params_config);
 			if ((msm_bedais[be_idx].active) && compr_passthr_mode)
 				adm_send_compressed_device_mute(port_id,
 					idx, mute);
-			break;
-		case ADM_PP_PARAM_LATENCY_ID:
+		} else {
 			pr_debug("%s: ADM_PP_PARAM_LATENCY\n", __func__);
-			msm_bedais_pp_params[index].latency =
-				ucontrol->value.integer.value[1];
+			msm_bedais_pp_params[index].latency = pp_value;
 			set_bit(ADM_PP_PARAM_LATENCY_BIT,
 				&msm_bedais_pp_params[index].pp_params_config);
 			latency = msm_bedais_pp_params[index].latency =
-				ucontrol->value.integer.value[1];
+				pp_value;
 			if ((msm_bedais[be_idx].active) && compr_passthr_mode)
 				adm_send_compressed_device_latency(port_id,
 					idx, latency);
-			break;
-		default:
-			pr_debug("%s, device pp param %d not supported\n",
-				__func__, pp_id);
-			break;
 		}
 		}
 	}
