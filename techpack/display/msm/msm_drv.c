@@ -1007,7 +1007,7 @@ static int msm_disable_all_modes(
 
 	for (i = 0; i < TEARDOWN_DEADLOCK_RETRY_MAX; i++) {
 		ret = msm_disable_all_modes_commit(dev, state);
-		if (ret != -EDEADLK || ret != -ERESTARTSYS)
+		if (ret != -EDEADLK && ret != -ERESTARTSYS)
 			break;
 		drm_atomic_state_clear(state);
 		drm_modeset_backoff(ctx);
@@ -1030,8 +1030,8 @@ static void msm_lastclose(struct drm_device *dev)
 	 * commit then ignore the last close call. Also, ignore
 	 * if kms module is not yet initialized.
 	 */
-	if (!kms || (kms && kms->funcs && kms->funcs->check_for_splash
-		&& kms->funcs->check_for_splash(kms, NULL)))
+	if (!kms || !kms->funcs || !kms->funcs->check_for_splash ||
+		kms->funcs->check_for_splash(kms, NULL))
 		return;
 
 	/*
@@ -1895,7 +1895,7 @@ static int add_components_mdp(struct device *mdp_dev,
 
 static int compare_name_mdp(struct device *dev, void *data)
 {
-	return (strnstr(dev_name(dev), "mdp", strlen("mdp")) != NULL);
+	return strnstr(dev_name(dev), "mdp", 3) != NULL;
 }
 
 static int add_display_components(struct device *dev,
