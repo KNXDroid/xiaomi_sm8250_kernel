@@ -131,7 +131,8 @@ static int bpf_test_finish(const union bpf_attr *kattr,
 			   union bpf_attr __user *uattr, const void *data,
 			   u32 size, u32 retval, u32 duration)
 {
-	void __user *data_out = u64_to_user_ptr(kattr->test.data_out);
+	u64 data_out = kattr->test.data_out;
+	void __user *data_out_ptr = u64_to_user_ptr(data_out);
 	int err = -EFAULT;
 	u32 copy_size = size;
 
@@ -144,7 +145,7 @@ static int bpf_test_finish(const union bpf_attr *kattr,
 		err = -ENOSPC;
 	}
 
-	if (data_out && copy_to_user(data_out, data, copy_size))
+	if (data_out_ptr && copy_to_user(data_out_ptr, data, copy_size))
 		goto out;
 	if (copy_to_user(&uattr->test.data_size_out, &size, sizeof(size)))
 		goto out;
@@ -222,7 +223,8 @@ ALLOW_ERROR_INJECTION(bpf_modify_return_test, ERRNO);
 static void *bpf_test_init(const union bpf_attr *kattr, u32 size,
 			   u32 headroom, u32 tailroom)
 {
-	void __user *data_in = u64_to_user_ptr(kattr->test.data_in);
+	u64 data_in = kattr->test.data_in;
+	void __user *data_in_ptr = u64_to_user_ptr(data_in);
 	u32 user_size = kattr->test.data_size_in;
 	void *data;
 
@@ -236,7 +238,7 @@ static void *bpf_test_init(const union bpf_attr *kattr, u32 size,
 	if (!data)
 		return ERR_PTR(-ENOMEM);
 
-	if (copy_from_user(data + headroom, data_in, user_size)) {
+	if (copy_from_user(data + headroom, data_in_ptr, user_size)) {
 		kfree(data);
 		return ERR_PTR(-EFAULT);
 	}
@@ -308,7 +310,8 @@ int bpf_prog_test_run_raw_tp(struct bpf_prog *prog,
 			     const union bpf_attr *kattr,
 			     union bpf_attr __user *uattr)
 {
-	void __user *ctx_in = u64_to_user_ptr(kattr->test.ctx_in);
+	u64 ctx_in = kattr->test.ctx_in;
+	void __user *ctx_in_ptr = u64_to_user_ptr(ctx_in);
 	__u32 ctx_size_in = kattr->test.ctx_size_in;
 	struct bpf_raw_tp_test_run_info info;
 	int cpu = kattr->test.cpu, err = 0;
@@ -331,7 +334,7 @@ int bpf_prog_test_run_raw_tp(struct bpf_prog *prog,
 		info.ctx = kzalloc(ctx_size_in, GFP_USER);
 		if (!info.ctx)
 			return -ENOMEM;
-		if (copy_from_user(info.ctx, ctx_in, ctx_size_in)) {
+		if (copy_from_user(info.ctx, ctx_in_ptr, ctx_size_in)) {
 			err = -EFAULT;
 			goto out;
 		}
@@ -369,8 +372,10 @@ out:
 
 static void *bpf_ctx_init(const union bpf_attr *kattr, u32 max_size)
 {
-	void __user *data_in = u64_to_user_ptr(kattr->test.ctx_in);
-	void __user *data_out = u64_to_user_ptr(kattr->test.ctx_out);
+	u64 ctx_in = kattr->test.ctx_in;
+	u64 ctx_out = kattr->test.ctx_out;
+	void __user *data_in = u64_to_user_ptr(ctx_in);
+	void __user *data_out = u64_to_user_ptr(ctx_out);
 	u32 size = kattr->test.ctx_size_in;
 	void *data;
 	int err;
@@ -402,7 +407,8 @@ static int bpf_ctx_finish(const union bpf_attr *kattr,
 			  union bpf_attr __user *uattr, const void *data,
 			  u32 size)
 {
-	void __user *data_out = u64_to_user_ptr(kattr->test.ctx_out);
+	u64 ctx_out = kattr->test.ctx_out;
+	void __user *data_out = u64_to_user_ptr(ctx_out);
 	int err = -EFAULT;
 	u32 copy_size = size;
 
