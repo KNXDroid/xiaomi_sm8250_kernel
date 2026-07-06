@@ -2399,27 +2399,63 @@ void ufshcd_release(struct ufs_hba *hba, bool no_sched)
 }
 EXPORT_SYMBOL_GPL(ufshcd_release);
 
-static ssize_t ufshcd_clkgate_delay_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	struct ufs_hba *hba = dev_get_drvdata(dev);
+enum ufshcd_clkgate_delay_type {
+	UFSHCD_CLKGATE_DELAY_ACTIVE,
+	UFSHCD_CLKGATE_DELAY_PWR_SAVE,
+	UFSHCD_CLKGATE_DELAY_PERF,
+};
 
-	return snprintf(buf, PAGE_SIZE, "%lu\n", hba->clk_gating.delay_ms);
+static noinline ssize_t ufshcd_clkgate_delay_show_value(char *buf,
+		unsigned long value)
+{
+	return snprintf(buf, PAGE_SIZE, "%lu\n", value);
 }
 
-static ssize_t ufshcd_clkgate_delay_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
+static noinline ssize_t ufshcd_clkgate_delay_store_value(struct ufs_hba *hba,
+		const char *buf, size_t count, enum ufshcd_clkgate_delay_type type)
 {
-	struct ufs_hba *hba = dev_get_drvdata(dev);
 	unsigned long flags, value;
 
 	if (kstrtoul(buf, 0, &value))
 		return -EINVAL;
 
 	spin_lock_irqsave(hba->host->host_lock, flags);
-	hba->clk_gating.delay_ms = value;
+
+	switch (type) {
+	case UFSHCD_CLKGATE_DELAY_ACTIVE:
+		hba->clk_gating.delay_ms = value;
+		break;
+	case UFSHCD_CLKGATE_DELAY_PWR_SAVE:
+		hba->clk_gating.delay_ms_pwr_save = value;
+		if (ufshcd_is_clkscaling_supported(hba) &&
+		    !hba->clk_scaling.is_scaled_up)
+			hba->clk_gating.delay_ms = value;
+		break;
+	case UFSHCD_CLKGATE_DELAY_PERF:
+		hba->clk_gating.delay_ms_perf = value;
+		if (ufshcd_is_clkscaling_supported(hba) &&
+		    hba->clk_scaling.is_scaled_up)
+			hba->clk_gating.delay_ms = value;
+		break;
+	}
+
 	spin_unlock_irqrestore(hba->host->host_lock, flags);
 	return count;
+}
+
+static ssize_t ufshcd_clkgate_delay_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct ufs_hba *hba = dev_get_drvdata(dev);
+
+	return ufshcd_clkgate_delay_show_value(buf, hba->clk_gating.delay_ms);
+}
+
+static ssize_t ufshcd_clkgate_delay_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	return ufshcd_clkgate_delay_store_value(dev_get_drvdata(dev), buf,
+			count, UFSHCD_CLKGATE_DELAY_ACTIVE);
 }
 
 static ssize_t ufshcd_clkgate_delay_pwr_save_show(struct device *dev,
@@ -2427,28 +2463,15 @@ static ssize_t ufshcd_clkgate_delay_pwr_save_show(struct device *dev,
 {
 	struct ufs_hba *hba = dev_get_drvdata(dev);
 
-	return snprintf(buf, PAGE_SIZE, "%lu\n",
+	return ufshcd_clkgate_delay_show_value(buf,
 			hba->clk_gating.delay_ms_pwr_save);
 }
 
 static ssize_t ufshcd_clkgate_delay_pwr_save_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
-	struct ufs_hba *hba = dev_get_drvdata(dev);
-	unsigned long flags, value;
-
-	if (kstrtoul(buf, 0, &value))
-		return -EINVAL;
-
-	spin_lock_irqsave(hba->host->host_lock, flags);
-
-	hba->clk_gating.delay_ms_pwr_save = value;
-	if (ufshcd_is_clkscaling_supported(hba) &&
-	    !hba->clk_scaling.is_scaled_up)
-		hba->clk_gating.delay_ms = hba->clk_gating.delay_ms_pwr_save;
-
-	spin_unlock_irqrestore(hba->host->host_lock, flags);
-	return count;
+	return ufshcd_clkgate_delay_store_value(dev_get_drvdata(dev), buf,
+			count, UFSHCD_CLKGATE_DELAY_PWR_SAVE);
 }
 
 static ssize_t ufshcd_clkgate_delay_perf_show(struct device *dev,
@@ -2456,27 +2479,15 @@ static ssize_t ufshcd_clkgate_delay_perf_show(struct device *dev,
 {
 	struct ufs_hba *hba = dev_get_drvdata(dev);
 
-	return snprintf(buf, PAGE_SIZE, "%lu\n", hba->clk_gating.delay_ms_perf);
+	return ufshcd_clkgate_delay_show_value(buf,
+			hba->clk_gating.delay_ms_perf);
 }
 
 static ssize_t ufshcd_clkgate_delay_perf_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
-	struct ufs_hba *hba = dev_get_drvdata(dev);
-	unsigned long flags, value;
-
-	if (kstrtoul(buf, 0, &value))
-		return -EINVAL;
-
-	spin_lock_irqsave(hba->host->host_lock, flags);
-
-	hba->clk_gating.delay_ms_perf = value;
-	if (ufshcd_is_clkscaling_supported(hba) &&
-	    hba->clk_scaling.is_scaled_up)
-		hba->clk_gating.delay_ms = hba->clk_gating.delay_ms_perf;
-
-	spin_unlock_irqrestore(hba->host->host_lock, flags);
-	return count;
+	return ufshcd_clkgate_delay_store_value(dev_get_drvdata(dev), buf,
+			count, UFSHCD_CLKGATE_DELAY_PERF);
 }
 
 static ssize_t ufshcd_clkgate_enable_show(struct device *dev,
