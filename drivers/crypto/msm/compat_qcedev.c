@@ -403,124 +403,146 @@ static int compat_put_qcedev_sha_op_req(
 	return err;
 }
 
-static unsigned int convert_cmd(unsigned int cmd)
-{
-	switch (cmd) {
-	case COMPAT_QCEDEV_IOCTL_ENC_REQ:
-		return QCEDEV_IOCTL_ENC_REQ;
-	case COMPAT_QCEDEV_IOCTL_DEC_REQ:
-		return QCEDEV_IOCTL_DEC_REQ;
-	case COMPAT_QCEDEV_IOCTL_SHA_INIT_REQ:
-		return QCEDEV_IOCTL_SHA_INIT_REQ;
-	case COMPAT_QCEDEV_IOCTL_SHA_UPDATE_REQ:
-		return QCEDEV_IOCTL_SHA_UPDATE_REQ;
-	case COMPAT_QCEDEV_IOCTL_SHA_FINAL_REQ:
-		return QCEDEV_IOCTL_SHA_FINAL_REQ;
-	case COMPAT_QCEDEV_IOCTL_GET_SHA_REQ:
-		return QCEDEV_IOCTL_GET_SHA_REQ;
-	case COMPAT_QCEDEV_IOCTL_GET_CMAC_REQ:
-		return QCEDEV_IOCTL_GET_CMAC_REQ;
-	case COMPAT_QCEDEV_IOCTL_MAP_BUF_REQ:
-		return QCEDEV_IOCTL_MAP_BUF_REQ;
-	case COMPAT_QCEDEV_IOCTL_UNMAP_BUF_REQ:
-		return QCEDEV_IOCTL_UNMAP_BUF_REQ;
-	default:
-		return cmd;
-	}
+typedef int (*compat_qcedev_xfer_fn)(void __user *data32,
+				     void __user *data, bool to_native);
 
+struct compat_qcedev_ioctl_desc {
+	unsigned int compat_cmd;
+	unsigned int native_cmd;
+	size_t native_size;
+	int no_space_ret;
+	compat_qcedev_xfer_fn xfer;
+};
+
+static int compat_xfer_qcedev_cipher_req(void __user *data32,
+					 void __user *data, bool to_native)
+{
+	if (to_native)
+		return compat_get_qcedev_cipher_op_req(data32, data);
+
+	return compat_put_qcedev_cipher_op_req(data32, data);
+}
+
+static int compat_xfer_qcedev_sha_req(void __user *data32,
+				      void __user *data, bool to_native)
+{
+	if (to_native)
+		return compat_get_qcedev_sha_op_req(data32, data);
+
+	return compat_put_qcedev_sha_op_req(data32, data);
+}
+
+static int compat_xfer_qcedev_map_req(void __user *data32,
+				      void __user *data, bool to_native)
+{
+	return compat_xfer_qcedev_map_buf_req(data32, data, to_native);
+}
+
+static int compat_xfer_qcedev_unmap_req(void __user *data32,
+					void __user *data, bool to_native)
+{
+	return compat_xfer_qcedev_unmap_buf_req(data32, data, to_native);
+}
+
+static const struct compat_qcedev_ioctl_desc compat_qcedev_ioctls[] = {
+	{
+		.compat_cmd = COMPAT_QCEDEV_IOCTL_ENC_REQ,
+		.native_cmd = QCEDEV_IOCTL_ENC_REQ,
+		.native_size = sizeof(struct qcedev_cipher_op_req),
+		.no_space_ret = -EFAULT,
+		.xfer = compat_xfer_qcedev_cipher_req,
+	},
+	{
+		.compat_cmd = COMPAT_QCEDEV_IOCTL_DEC_REQ,
+		.native_cmd = QCEDEV_IOCTL_DEC_REQ,
+		.native_size = sizeof(struct qcedev_cipher_op_req),
+		.no_space_ret = -EFAULT,
+		.xfer = compat_xfer_qcedev_cipher_req,
+	},
+	{
+		.compat_cmd = COMPAT_QCEDEV_IOCTL_SHA_INIT_REQ,
+		.native_cmd = QCEDEV_IOCTL_SHA_INIT_REQ,
+		.native_size = sizeof(struct qcedev_sha_op_req),
+		.no_space_ret = -EFAULT,
+		.xfer = compat_xfer_qcedev_sha_req,
+	},
+	{
+		.compat_cmd = COMPAT_QCEDEV_IOCTL_SHA_UPDATE_REQ,
+		.native_cmd = QCEDEV_IOCTL_SHA_UPDATE_REQ,
+		.native_size = sizeof(struct qcedev_sha_op_req),
+		.no_space_ret = -EFAULT,
+		.xfer = compat_xfer_qcedev_sha_req,
+	},
+	{
+		.compat_cmd = COMPAT_QCEDEV_IOCTL_SHA_FINAL_REQ,
+		.native_cmd = QCEDEV_IOCTL_SHA_FINAL_REQ,
+		.native_size = sizeof(struct qcedev_sha_op_req),
+		.no_space_ret = -EFAULT,
+		.xfer = compat_xfer_qcedev_sha_req,
+	},
+	{
+		.compat_cmd = COMPAT_QCEDEV_IOCTL_GET_SHA_REQ,
+		.native_cmd = QCEDEV_IOCTL_GET_SHA_REQ,
+		.native_size = sizeof(struct qcedev_sha_op_req),
+		.no_space_ret = -EFAULT,
+		.xfer = compat_xfer_qcedev_sha_req,
+	},
+	{
+		.compat_cmd = COMPAT_QCEDEV_IOCTL_GET_CMAC_REQ,
+		.native_cmd = QCEDEV_IOCTL_GET_CMAC_REQ,
+		.native_size = sizeof(struct qcedev_sha_op_req),
+		.no_space_ret = -EFAULT,
+		.xfer = compat_xfer_qcedev_sha_req,
+	},
+	{
+		.compat_cmd = COMPAT_QCEDEV_IOCTL_MAP_BUF_REQ,
+		.native_cmd = QCEDEV_IOCTL_MAP_BUF_REQ,
+		.native_size = sizeof(struct qcedev_map_buf_req),
+		.no_space_ret = -EINVAL,
+		.xfer = compat_xfer_qcedev_map_req,
+	},
+	{
+		.compat_cmd = COMPAT_QCEDEV_IOCTL_UNMAP_BUF_REQ,
+		.native_cmd = QCEDEV_IOCTL_UNMAP_BUF_REQ,
+		.native_size = sizeof(struct qcedev_unmap_buf_req),
+		.no_space_ret = -EINVAL,
+		.xfer = compat_xfer_qcedev_unmap_req,
+	},
+};
+
+static long compat_qcedev_ioctl_xfer(struct file *file, unsigned long arg,
+		const struct compat_qcedev_ioctl_desc *desc)
+{
+	void __user *data32 = compat_ptr(arg);
+	void __user *data;
+	long ret;
+	int err;
+
+	data = compat_alloc_user_space(desc->native_size);
+	if (!data)
+		return desc->no_space_ret;
+
+	err = desc->xfer(data32, data, true);
+	if (err)
+		return err;
+
+	ret = qcedev_ioctl(file, desc->native_cmd, (unsigned long)data);
+	err = desc->xfer(data32, data, false);
+
+	return ret ? ret : err;
 }
 
 long compat_qcedev_ioctl(struct file *file,
 		unsigned int cmd, unsigned long arg)
 {
-	long ret;
+	int i;
 
-	switch (cmd) {
-	case COMPAT_QCEDEV_IOCTL_ENC_REQ:
-	case COMPAT_QCEDEV_IOCTL_DEC_REQ: {
-		struct compat_qcedev_cipher_op_req __user *data32;
-		struct qcedev_cipher_op_req __user *data;
-		int err;
+	for (i = 0; i < ARRAY_SIZE(compat_qcedev_ioctls); i++)
+		if (cmd == compat_qcedev_ioctls[i].compat_cmd)
+			return compat_qcedev_ioctl_xfer(file, arg,
+					&compat_qcedev_ioctls[i]);
 
-		data32 = compat_ptr(arg);
-		data = compat_alloc_user_space(sizeof(*data));
-		if (!data)
-			return -EFAULT;
-
-		err = compat_get_qcedev_cipher_op_req(data32, data);
-		if (err)
-			return err;
-
-		ret = qcedev_ioctl(file, convert_cmd(cmd), (unsigned long)data);
-		err = compat_put_qcedev_cipher_op_req(data32, data);
-		return ret ? ret : err;
-	}
-	case COMPAT_QCEDEV_IOCTL_SHA_INIT_REQ:
-	case COMPAT_QCEDEV_IOCTL_SHA_UPDATE_REQ:
-	case COMPAT_QCEDEV_IOCTL_SHA_FINAL_REQ:
-	case COMPAT_QCEDEV_IOCTL_GET_CMAC_REQ:
-	case COMPAT_QCEDEV_IOCTL_GET_SHA_REQ: {
-		struct compat_qcedev_sha_op_req __user *data32;
-		struct qcedev_sha_op_req __user *data;
-		int err;
-
-		data32 = compat_ptr(arg);
-		data = compat_alloc_user_space(sizeof(*data));
-		if (!data)
-			return -EFAULT;
-
-		err = compat_get_qcedev_sha_op_req(data32, data);
-		if (err)
-			return err;
-
-		ret = qcedev_ioctl(file, convert_cmd(cmd), (unsigned long)data);
-		err = compat_put_qcedev_sha_op_req(data32, data);
-		return ret ? ret : err;
-	}
-	case COMPAT_QCEDEV_IOCTL_MAP_BUF_REQ: {
-		struct compat_qcedev_map_buf_req __user *data32;
-		struct qcedev_map_buf_req __user *data;
-		int err;
-
-		data32 = compat_ptr(arg);
-		data = compat_alloc_user_space(sizeof(*data));
-		if (!data)
-			return -EINVAL;
-
-		err = compat_xfer_qcedev_map_buf_req(data32, data, true);
-		if (err)
-			return err;
-
-		ret = qcedev_ioctl(file, convert_cmd(cmd), (unsigned long)data);
-		err = compat_xfer_qcedev_map_buf_req(data32, data, false);
-		return ret ? ret : err;
-
-		break;
-	}
-	case COMPAT_QCEDEV_IOCTL_UNMAP_BUF_REQ: {
-		struct compat_qcedev_unmap_buf_req __user *data32;
-		struct qcedev_unmap_buf_req __user *data;
-		int err;
-
-		data32 = compat_ptr(arg);
-		data = compat_alloc_user_space(sizeof(*data));
-		if (!data)
-			return -EINVAL;
-
-		err = compat_xfer_qcedev_unmap_buf_req(data32, data, true);
-		if (err)
-			return err;
-
-		ret = qcedev_ioctl(file, convert_cmd(cmd), (unsigned long)data);
-		err = compat_xfer_qcedev_unmap_buf_req(data32, data, false);
-		return ret ? ret : err;
-
-		break;
-	}
-	default:
-		return -ENOIOCTLCMD;
-	}
-	return 0;
+	return -ENOIOCTLCMD;
 }
 EXPORT_SYMBOL(compat_qcedev_ioctl);
 
