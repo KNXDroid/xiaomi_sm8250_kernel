@@ -3674,7 +3674,14 @@ struct smb_reg_dump {
 	char log[256];
 };
 
-static inline void dump_reg_flush(struct smb_reg_dump *dump)
+struct smb_reg_range {
+	u16 base;
+	u8 first;
+	u8 last;
+	const char *name;
+};
+
+static void dump_reg_flush(struct smb_reg_dump *dump)
 {
 	if (!dump->len)
 		return;
@@ -3685,17 +3692,12 @@ static inline void dump_reg_flush(struct smb_reg_dump *dump)
 	dump->len = 0;
 }
 
-static inline void dump_reg(struct smb_charger *chg, u16 addr,
+static void dump_reg(struct smb_charger *chg, u16 addr,
 		const char *name, struct smb_reg_dump *dump)
 {
 	u8 reg = 0;
 	int rc;
 	u16 peripheral_base;
-
-	if (NULL == name) {
-		dump_reg_flush(dump);
-		return;
-	}
 
 	rc = smblib_read(chg, addr, &reg);
 	if (rc < 0)
@@ -3719,80 +3721,41 @@ static inline void dump_reg(struct smb_charger *chg, u16 addr,
 
 static void dump_regs(struct smb_charger *chg)
 {
+	static const struct smb_reg_range ranges[] = {
+		{ CHGR_BASE, 0x06, 0x0E, "CHGR Status" },
+		{ CHGR_BASE, 0x10, 0x1B, "CHGR INT" },
+		{ CHGR_BASE, 0x50, 0x70, "CHGR Config" },
+		{ BATIF_BASE, 0x10, 0x1B, "BATIF INT" },
+		{ BATIF_BASE, 0x50, 0x52, "BATIF Config" },
+		{ BATIF_BASE, 0x60, 0x62, "BATIF Config" },
+		{ BATIF_BASE, 0x70, 0x71, "BATIF Config" },
+		{ USBIN_BASE, 0x06, 0x10, "USBIN Status" },
+		{ USBIN_BASE, 0x12, 0x19, "USBIN INT " },
+		{ USBIN_BASE, 0x40, 0x43, "USBIN Cmd " },
+		{ USBIN_BASE, 0x58, 0x70, "USBIN Config " },
+		{ USBIN_BASE, 0x80, 0x84, "USBIN Config " },
+		{ TYPEC_BASE, 0x06, 0x1B, "TYPEC Status" },
+		{ TYPEC_BASE, 0x42, 0x72, "TYPEC Config" },
+		{ TYPEC_BASE, 0x44, 0x44, "TYPEC MODE CFG" },
+		{ MISC_BASE, 0x06, 0x10, "MISC Status" },
+		{ MISC_BASE, 0x15, 0x1B, "MISC INT" },
+		{ MISC_BASE, 0x51, 0x62, "MISC Config" },
+		{ MISC_BASE, 0x70, 0x76, "MISC Config" },
+		{ MISC_BASE, 0x80, 0x84, "MISC Config" },
+		{ MISC_BASE, 0x90, 0x94, "MISC Config" },
+	};
 	struct smb_reg_dump dump = { .peripheral_base = 0xffff };
+	int i;
 	u16 addr;
 
-	/* charger peripheral */
-	for (addr = 0x6; addr <= 0xE; addr++)
-		dump_reg(chg, CHGR_BASE + addr, "CHGR Status", &dump);
+	for (i = 0; i < ARRAY_SIZE(ranges); i++) {
+		const struct smb_reg_range *range = &ranges[i];
 
-	for (addr = 0x10; addr <= 0x1B; addr++)
-		dump_reg(chg, CHGR_BASE + addr, "CHGR INT", &dump);
+		for (addr = range->first; addr <= range->last; addr++)
+			dump_reg(chg, range->base + addr, range->name, &dump);
+	}
 
-	for (addr = 0x50; addr <= 0x70; addr++)
-		dump_reg(chg, CHGR_BASE + addr, "CHGR Config", &dump);
-
-	dump_reg(chg, CHGR_BASE + addr, NULL, &dump);
-
-	for (addr = 0x10; addr <= 0x1B; addr++)
-		dump_reg(chg, BATIF_BASE + addr, "BATIF INT", &dump);
-
-	for (addr = 0x50; addr <= 0x52; addr++)
-		dump_reg(chg, BATIF_BASE + addr, "BATIF Config", &dump);
-
-	for (addr = 0x60; addr <= 0x62; addr++)
-		dump_reg(chg, BATIF_BASE + addr, "BATIF Config", &dump);
-
-	for (addr = 0x70; addr <= 0x71; addr++)
-		dump_reg(chg, BATIF_BASE + addr, "BATIF Config", &dump);
-
-	dump_reg(chg, BATIF_BASE + addr, NULL, &dump);
-
-	for (addr = 0x6; addr <= 0x10; addr++)
-		dump_reg(chg, USBIN_BASE + addr, "USBIN Status", &dump);
-
-	for (addr = 0x12; addr <= 0x19; addr++)
-		dump_reg(chg, USBIN_BASE + addr, "USBIN INT ", &dump);
-
-	for (addr = 0x40; addr <= 0x43; addr++)
-		dump_reg(chg, USBIN_BASE + addr, "USBIN Cmd ", &dump);
-
-	for (addr = 0x58; addr <= 0x70; addr++)
-		dump_reg(chg, USBIN_BASE + addr, "USBIN Config ", &dump);
-
-	for (addr = 0x80; addr <= 0x84; addr++)
-		dump_reg(chg, USBIN_BASE + addr, "USBIN Config ", &dump);
-
-	dump_reg(chg, USBIN_BASE + addr, NULL, &dump);
-
-	for (addr = 0x06; addr <= 0x1B; addr++)
-		dump_reg(chg, TYPEC_BASE + addr, "TYPEC Status", &dump);
-
-	for (addr = 0x42; addr <= 0x72; addr++)
-		dump_reg(chg, TYPEC_BASE + addr, "TYPEC Config", &dump);
-
-	dump_reg(chg, TYPEC_BASE + 0x44, "TYPEC MODE CFG", &dump);
-	dump_reg(chg, TYPEC_BASE + addr, NULL, &dump);
-
-	for (addr = 0x6; addr <= 0x10; addr++)
-		dump_reg(chg, MISC_BASE + addr, "MISC Status", &dump);
-
-	for (addr = 0x15; addr <= 0x1B; addr++)
-		dump_reg(chg, MISC_BASE + addr, "MISC INT", &dump);
-
-	for (addr = 0x51; addr <= 0x62; addr++)
-		dump_reg(chg, MISC_BASE + addr, "MISC Config", &dump);
-
-	for (addr = 0x70; addr <= 0x76; addr++)
-		dump_reg(chg, MISC_BASE + addr, "MISC Config", &dump);
-
-	for (addr = 0x80; addr <= 0x84; addr++)
-		dump_reg(chg, MISC_BASE + addr, "MISC Config", &dump);
-
-	for (addr = 0x90; addr <= 0x94; addr++)
-		dump_reg(chg, MISC_BASE + addr, "MISC Config", &dump);
-
-	dump_reg(chg, MISC_BASE + addr, NULL, &dump);
+	dump_reg_flush(&dump);
 }
 
 #define CHARGING_PERIOD_S		600
