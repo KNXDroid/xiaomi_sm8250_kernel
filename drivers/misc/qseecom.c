@@ -442,11 +442,11 @@ static int qseecom_load_commonlib_image(struct qseecom_dev_handle *data,
 static int qseecom_enable_ice_setup(int usage);
 static int qseecom_disable_ice_setup(int usage);
 static void __qseecom_reentrancy_check_if_no_app_blocked(uint32_t smc_id);
-static int qseecom_get_ce_info(struct qseecom_dev_handle *data,
+static noinline int qseecom_get_ce_info(struct qseecom_dev_handle *data,
 						void __user *argp);
-static int qseecom_free_ce_info(struct qseecom_dev_handle *data,
+static noinline int qseecom_free_ce_info(struct qseecom_dev_handle *data,
 						void __user *argp);
-static int qseecom_query_ce_info(struct qseecom_dev_handle *data,
+static noinline int qseecom_query_ce_info(struct qseecom_dev_handle *data,
 						void __user *argp);
 static int __qseecom_unload_app(struct qseecom_dev_handle *data,
 				uint32_t app_id);
@@ -1516,7 +1516,7 @@ err:
 	return ret;
 }
 
-static int qseecom_register_listener(struct qseecom_dev_handle *data,
+static noinline int qseecom_register_listener(struct qseecom_dev_handle *data,
 					void __user *argp)
 {
 	int ret = 0;
@@ -1652,7 +1652,7 @@ exit:
 	return ret;
 }
 
-static int qseecom_unregister_listener(struct qseecom_dev_handle *data)
+static noinline int qseecom_unregister_listener(struct qseecom_dev_handle *data)
 {
 	struct qseecom_registered_listener_list *ptr_svc = NULL;
 	struct qseecom_unregister_pending_list *entry = NULL;
@@ -1899,7 +1899,7 @@ static int __qseecom_register_bus_bandwidth_needs(
 	return 0;
 }
 
-static int qseecom_perf_enable(struct qseecom_dev_handle *data)
+static noinline int qseecom_perf_enable(struct qseecom_dev_handle *data)
 {
 	int ret = 0;
 
@@ -1919,7 +1919,7 @@ perf_enable_exit:
 	return ret;
 }
 
-static int qseecom_scale_bus_bandwidth(struct qseecom_dev_handle *data,
+static noinline int qseecom_scale_bus_bandwidth(struct qseecom_dev_handle *data,
 						void __user *argp)
 {
 	int32_t ret = 0;
@@ -2002,7 +2002,7 @@ static int __qseecom_enable_clk_scale_up(struct qseecom_dev_handle *data)
 	return ret;
 }
 
-static int qseecom_set_client_mem_param(struct qseecom_dev_handle *data,
+static noinline int qseecom_set_client_mem_param(struct qseecom_dev_handle *data,
 						void __user *argp)
 {
 	int32_t ret;
@@ -2745,7 +2745,8 @@ static int __qseecom_check_app_exists(struct qseecom_check_app_ireq req,
 	}
 }
 
-static int qseecom_load_app(struct qseecom_dev_handle *data, void __user *argp)
+static noinline int qseecom_load_app(struct qseecom_dev_handle *data,
+				     void __user *argp)
 {
 	struct qseecom_registered_app_list *entry = NULL;
 	unsigned long flags = 0;
@@ -3065,7 +3066,7 @@ static int __qseecom_unload_app(struct qseecom_dev_handle *data,
 	return ret;
 }
 
-static int qseecom_unload_app(struct qseecom_dev_handle *data,
+static noinline int qseecom_unload_app(struct qseecom_dev_handle *data,
 				bool app_crash)
 {
 	unsigned long flags;
@@ -3409,7 +3410,7 @@ static int __validate_send_service_cmd_inputs(struct qseecom_dev_handle *data,
 	return 0;
 }
 
-static int qseecom_send_service_cmd(struct qseecom_dev_handle *data,
+static noinline int qseecom_send_service_cmd(struct qseecom_dev_handle *data,
 				void __user *argp)
 {
 	int ret = 0;
@@ -3817,7 +3818,8 @@ exit:
 	return ret;
 }
 
-static int qseecom_send_cmd(struct qseecom_dev_handle *data, void __user *argp)
+static noinline int qseecom_send_cmd(struct qseecom_dev_handle *data,
+				     void __user *argp)
 {
 	int ret = 0;
 	struct qseecom_send_cmd_req req;
@@ -4403,13 +4405,13 @@ out:
 	return ret;
 }
 
-static int qseecom_send_modfd_cmd(struct qseecom_dev_handle *data,
+static noinline int qseecom_send_modfd_cmd(struct qseecom_dev_handle *data,
 					void __user *argp)
 {
 	return __qseecom_send_modfd_cmd(data, argp, false);
 }
 
-static int qseecom_send_modfd_cmd_64(struct qseecom_dev_handle *data,
+static noinline int qseecom_send_modfd_cmd_64(struct qseecom_dev_handle *data,
 					void __user *argp)
 {
 	return __qseecom_send_modfd_cmd(data, argp, true);
@@ -4426,7 +4428,7 @@ static int __qseecom_listener_has_rcvd_req(struct qseecom_dev_handle *data,
 	return ret || data->abort;
 }
 
-static int qseecom_receive_req(struct qseecom_dev_handle *data)
+static noinline int qseecom_receive_req(struct qseecom_dev_handle *data)
 {
 	int ret = 0;
 	struct qseecom_registered_listener_list *this_lstnr;
@@ -5373,7 +5375,7 @@ int qseecom_process_listener_from_smcinvoke(struct scm_desc *desc)
 }
 EXPORT_SYMBOL(qseecom_process_listener_from_smcinvoke);
 
-static int qseecom_send_resp(void)
+static noinline int qseecom_send_resp(void)
 {
 	qseecom.send_resp_flag = 1;
 	wake_up_interruptible(&qseecom.send_resp_wq);
@@ -5481,19 +5483,19 @@ static int __qseecom_send_modfd_resp(struct qseecom_dev_handle *data,
 	return 0;
 }
 
-static int qseecom_send_modfd_resp(struct qseecom_dev_handle *data,
+static noinline int qseecom_send_modfd_resp(struct qseecom_dev_handle *data,
 						void __user *argp)
 {
 	return __qseecom_send_modfd_resp(data, argp, false);
 }
 
-static int qseecom_send_modfd_resp_64(struct qseecom_dev_handle *data,
+static noinline int qseecom_send_modfd_resp_64(struct qseecom_dev_handle *data,
 						void __user *argp)
 {
 	return __qseecom_send_modfd_resp(data, argp, true);
 }
 
-static int qseecom_get_qseos_version(struct qseecom_dev_handle *data,
+static noinline int qseecom_get_qseos_version(struct qseecom_dev_handle *data,
 						void __user *argp)
 {
 	struct qseecom_qseos_version_req req;
@@ -5775,7 +5777,7 @@ static void qsee_disable_clock_vote(struct qseecom_dev_handle *data,
 
 }
 
-static int qseecom_load_external_elf(struct qseecom_dev_handle *data,
+static noinline int qseecom_load_external_elf(struct qseecom_dev_handle *data,
 				void __user *argp)
 {
 	struct qseecom_load_img_req load_img_req;
@@ -5914,7 +5916,7 @@ exit_cpu_restore:
 	return ret;
 }
 
-static int qseecom_unload_external_elf(struct qseecom_dev_handle *data)
+static noinline int qseecom_unload_external_elf(struct qseecom_dev_handle *data)
 {
 	int ret = 0;
 	struct qseecom_command_scm_resp resp;
@@ -5953,7 +5955,7 @@ qseecom_unload_external_elf_scm_err:
 	return ret;
 }
 
-static int qseecom_query_app_loaded(struct qseecom_dev_handle *data,
+static noinline int qseecom_query_app_loaded(struct qseecom_dev_handle *data,
 					void __user *argp)
 {
 	int32_t ret = 0;
@@ -6434,7 +6436,7 @@ static int qseecom_get_ce_hw_instance(uint32_t unit, uint32_t usage)
 	return pce_info_use->num_ce_pipe_entries;
 }
 
-static int qseecom_create_key(struct qseecom_dev_handle *data,
+static noinline int qseecom_create_key(struct qseecom_dev_handle *data,
 			void __user *argp)
 {
 	int i;
@@ -6579,7 +6581,7 @@ free_buf:
 	return ret;
 }
 
-static int qseecom_wipe_key(struct qseecom_dev_handle *data,
+static noinline int qseecom_wipe_key(struct qseecom_dev_handle *data,
 				void __user *argp)
 {
 	uint32_t *ce_hw = NULL;
@@ -6693,7 +6695,7 @@ free_buf:
 	return ret;
 }
 
-static int qseecom_update_key_user_info(struct qseecom_dev_handle *data,
+static noinline int qseecom_update_key_user_info(struct qseecom_dev_handle *data,
 			void __user *argp)
 {
 	int ret = 0;
@@ -6751,7 +6753,7 @@ static int qseecom_update_key_user_info(struct qseecom_dev_handle *data,
 	return ret;
 
 }
-static int qseecom_is_es_activated(void __user *argp)
+static noinline int qseecom_is_es_activated(void __user *argp)
 {
 	struct qseecom_is_es_activated_req req = {0};
 	struct qseecom_command_scm_resp resp;
@@ -6784,7 +6786,7 @@ static int qseecom_is_es_activated(void __user *argp)
 	return 0;
 }
 
-static int qseecom_save_partition_hash(void __user *argp)
+static noinline int qseecom_save_partition_hash(void __user *argp)
 {
 	struct qseecom_save_partition_hash_req req;
 	struct qseecom_command_scm_resp resp;
@@ -6818,7 +6820,7 @@ static int qseecom_save_partition_hash(void __user *argp)
 	return 0;
 }
 
-static int qseecom_mdtp_cipher_dip(void __user *argp)
+static noinline int qseecom_mdtp_cipher_dip(void __user *argp)
 {
 	struct qseecom_mdtp_cipher_dip_req req;
 	u32 tzbuflenin, tzbuflenout;
@@ -7333,7 +7335,7 @@ exit:
 	return ret;
 }
 
-static int qseecom_qteec_open_session(struct qseecom_dev_handle *data,
+static noinline int qseecom_qteec_open_session(struct qseecom_dev_handle *data,
 				void __user *argp)
 {
 	struct qseecom_qteec_modfd_req req;
@@ -7351,7 +7353,7 @@ static int qseecom_qteec_open_session(struct qseecom_dev_handle *data,
 	return ret;
 }
 
-static int qseecom_qteec_close_session(struct qseecom_dev_handle *data,
+static noinline int qseecom_qteec_close_session(struct qseecom_dev_handle *data,
 				void __user *argp)
 {
 	struct qseecom_qteec_req req;
@@ -7366,7 +7368,7 @@ static int qseecom_qteec_close_session(struct qseecom_dev_handle *data,
 	return ret;
 }
 
-static int qseecom_qteec_invoke_modfd_cmd(struct qseecom_dev_handle *data,
+static noinline int qseecom_qteec_invoke_modfd_cmd(struct qseecom_dev_handle *data,
 				void __user *argp)
 {
 	struct qseecom_qteec_modfd_req req;
@@ -7520,7 +7522,7 @@ static int qseecom_qteec_invoke_modfd_cmd(struct qseecom_dev_handle *data,
 	return 0;
 }
 
-static int qseecom_qteec_request_cancellation(struct qseecom_dev_handle *data,
+static noinline int qseecom_qteec_request_cancellation(struct qseecom_dev_handle *data,
 				void __user *argp)
 {
 	struct qseecom_qteec_modfd_req req;
@@ -7547,7 +7549,7 @@ static void __qseecom_clean_data_sglistinfo(struct qseecom_dev_handle *data)
 	}
 }
 
-static int __qseecom_prepare_client_send(struct qseecom_dev_handle *data,
+static noinline int __qseecom_prepare_client_send(struct qseecom_dev_handle *data,
 					 bool *perf_enabled)
 {
 	int ret;
@@ -7588,7 +7590,7 @@ static int __qseecom_prepare_client_send(struct qseecom_dev_handle *data,
 	return 0;
 }
 
-static void __qseecom_finish_client_send(struct qseecom_dev_handle *data,
+static noinline void __qseecom_finish_client_send(struct qseecom_dev_handle *data,
 					 bool perf_enabled)
 {
 	if (qseecom.support_bus_scaling)
@@ -8872,7 +8874,7 @@ out:
 	return rc;
 }
 
-static int qseecom_get_ce_info(struct qseecom_dev_handle *data,
+static noinline int qseecom_get_ce_info(struct qseecom_dev_handle *data,
 				void __user *argp)
 {
 	struct qseecom_ce_info_req req;
@@ -8959,7 +8961,7 @@ static int qseecom_get_ce_info(struct qseecom_dev_handle *data,
 	return ret;
 }
 
-static int qseecom_free_ce_info(struct qseecom_dev_handle *data,
+static noinline int qseecom_free_ce_info(struct qseecom_dev_handle *data,
 				void __user *argp)
 {
 	struct qseecom_ce_info_req req;
@@ -9015,7 +9017,7 @@ static int qseecom_free_ce_info(struct qseecom_dev_handle *data,
 	return ret;
 }
 
-static int qseecom_query_ce_info(struct qseecom_dev_handle *data,
+static noinline int qseecom_query_ce_info(struct qseecom_dev_handle *data,
 				void __user *argp)
 {
 	struct qseecom_ce_info_req req;
