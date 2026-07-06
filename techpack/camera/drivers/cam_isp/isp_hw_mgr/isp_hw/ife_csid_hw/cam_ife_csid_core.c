@@ -4553,43 +4553,12 @@ static int cam_csid_put_evt_payload(
 
 	return 0;
 }
-static char *cam_csid_status_to_str(uint32_t status)
-{
-	switch (status) {
-	case CAM_IFE_CSID_IRQ_REG_TOP:
-		return "TOP";
-	case CAM_IFE_CSID_IRQ_REG_RX:
-		return "RX";
-	case CAM_IFE_CSID_IRQ_REG_IPP:
-		return "IPP";
-	case CAM_IFE_CSID_IRQ_REG_PPP:
-		return "PPP";
-	case CAM_IFE_CSID_IRQ_REG_RDI_0:
-		return "RDI0";
-	case CAM_IFE_CSID_IRQ_REG_RDI_1:
-		return "RDI1";
-	case CAM_IFE_CSID_IRQ_REG_RDI_2:
-		return "RDI2";
-	case CAM_IFE_CSID_IRQ_REG_RDI_3:
-		return "RDI3";
-	case CAM_IFE_CSID_IRQ_REG_UDI_0:
-		return "UDI0";
-	case CAM_IFE_CSID_IRQ_REG_UDI_1:
-		return "UDI1";
-	case CAM_IFE_CSID_IRQ_REG_UDI_2:
-		return "UDI2";
-	default:
-		return "Invalid IRQ";
-	}
-}
-
 static int cam_csid_evt_bottom_half_handler(
 	void *handler_priv,
 	void *evt_payload_priv)
 {
 	struct cam_ife_csid_hw *csid_hw;
 	struct cam_csid_evt_payload *evt_payload;
-	int i;
 	int rc = 0;
 	struct cam_isp_hw_event_info event_info;
 
@@ -4620,21 +4589,6 @@ static int cam_csid_evt_bottom_half_handler(
 			evt_payload->priv);
 		goto end;
 	}
-
-	CAM_ERR_RATE_LIMIT(CAM_ISP,
-		"idx %d err %d phy %d  lane type:%d ln num:%d ln cfg:0x%x cnt %d",
-		csid_hw->hw_intf->hw_idx,
-		evt_payload->evt_type,
-		csid_hw->csi2_rx_cfg.phy_sel,
-		csid_hw->csi2_rx_cfg.lane_type,
-		csid_hw->csi2_rx_cfg.lane_num,
-		csid_hw->csi2_rx_cfg.lane_cfg,
-		csid_hw->csi2_cfg_cnt);
-
-	for (i = 0; i < CAM_IFE_CSID_IRQ_REG_MAX; i++)
-		CAM_ERR_RATE_LIMIT(CAM_ISP, "status %s: %x",
-			cam_csid_status_to_str(i),
-			evt_payload->irq_status[i]);
 
 	/* this hunk can be extended to handle more cases
 	 * which we want to offload to bottom half from
