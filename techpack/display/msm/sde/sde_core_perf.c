@@ -592,6 +592,7 @@ void sde_core_perf_crtc_update_uidle(struct drm_crtc *crtc,
 {
 	struct drm_crtc *tmp_crtc;
 	struct sde_kms *kms;
+	bool is_wb, is_cwb;
 	bool disable_uidle = false;
 	u32 fps;
 
@@ -618,17 +619,16 @@ void sde_core_perf_crtc_update_uidle(struct drm_crtc *crtc,
 
 	drm_for_each_crtc(tmp_crtc, crtc->dev) {
 		if (_sde_core_perf_crtc_is_power_on(tmp_crtc)) {
+			is_wb = _sde_core_perf_is_wb(tmp_crtc);
+			is_cwb = _sde_core_perf_is_cwb(tmp_crtc);
 
 			fps = sde_crtc_get_fps_mode(tmp_crtc);
 
 			SDE_DEBUG("crtc=%d fps:%d wb:%d cwb:%d dis:%d en:%d\n",
-				tmp_crtc->base.id, fps,
-				_sde_core_perf_is_wb(tmp_crtc),
-				_sde_core_perf_is_cwb(tmp_crtc),
+				tmp_crtc->base.id, fps, is_wb, is_cwb,
 				disable_uidle, enable);
 
-			if (_sde_core_perf_is_wb(tmp_crtc) ||
-				_sde_core_perf_is_cwb(tmp_crtc) || (!fps ||
+			if (is_wb || is_cwb || (!fps ||
 				 fps > kms->perf.catalog->uidle_cfg.max_fps)) {
 				disable_uidle = true;
 				break;
@@ -757,8 +757,9 @@ void sde_core_perf_crtc_release_bw(struct drm_crtc *crtc)
 {
 	struct drm_crtc *tmp_crtc;
 	struct sde_crtc *sde_crtc;
-	struct sde_crtc_state *sde_cstate;
 	struct sde_kms *kms;
+	enum sde_intf_mode intf_mode;
+	enum sde_crtc_client_type client_type;
 	int i;
 
 	if (!crtc) {
@@ -773,18 +774,18 @@ void sde_core_perf_crtc_release_bw(struct drm_crtc *crtc)
 	}
 
 	sde_crtc = to_sde_crtc(crtc);
-	sde_cstate = to_sde_crtc_state(crtc->state);
+	intf_mode = sde_crtc_get_intf_mode(crtc, crtc->state);
+	client_type = sde_crtc_get_client_type(crtc);
 
 	/* only do this for command mode rt client (non-rsc client) */
-	if ((sde_crtc_get_intf_mode(crtc, crtc->state) != INTF_MODE_CMD) &&
-		(sde_crtc_get_client_type(crtc) != RT_RSC_CLIENT))
+	if (intf_mode != INTF_MODE_CMD && client_type != RT_RSC_CLIENT)
 		return;
 
 	/*
 	 * If video interface present, cmd panel bandwidth cannot be
 	 * released.
 	 */
-	if (sde_crtc_get_intf_mode(crtc, crtc->state) == INTF_MODE_CMD)
+	if (intf_mode == INTF_MODE_CMD)
 		drm_for_each_crtc(tmp_crtc, crtc->dev) {
 			if (_sde_core_perf_crtc_is_power_on(tmp_crtc) &&
 				sde_crtc_get_intf_mode(tmp_crtc,
