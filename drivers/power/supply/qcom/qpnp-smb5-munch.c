@@ -1407,7 +1407,7 @@ static int smb5_usb_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE:
 		val->intval = smblib_get_quick_charge_type(chg);
-		pr_err("quick charge type is %d\n", val->intval);
+		pr_debug("quick charge type is %d\n", val->intval);
 		break;
 	case POWER_SUPPLY_PROP_QUICK_CHARGE_POWER:
 		val->intval = chg->quick_charge_power;
