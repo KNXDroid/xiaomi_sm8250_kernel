@@ -1309,6 +1309,7 @@ static enum power_supply_property smb5_usb_props[] = {
 	POWER_SUPPLY_PROP_REAL_TYPE,
 	POWER_SUPPLY_PROP_HVDCP3_TYPE,
 	POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE,
+	POWER_SUPPLY_PROP_QUICK_CHARGE_POWER,
 	POWER_SUPPLY_PROP_PD_VOLTAGE_MAX,
 	POWER_SUPPLY_PROP_PD_VOLTAGE_MIN,
 	POWER_SUPPLY_PROP_CONNECTOR_TYPE,
@@ -1407,6 +1408,9 @@ static int smb5_usb_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE:
 		val->intval = smblib_get_quick_charge_type(chg);
 		pr_err("quick charge type is %d\n", val->intval);
+		break;
+	case POWER_SUPPLY_PROP_QUICK_CHARGE_POWER:
+		val->intval = chg->quick_charge_power;
 		break;
 	case POWER_SUPPLY_PROP_TYPEC_MODE:
 		rc = smblib_get_usb_prop_typec_mode(chg, val);
@@ -1673,6 +1677,15 @@ static int smb5_usb_set_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_ADAPTER_CC_MODE:
 		chg->adapter_cc_mode = val->intval;
 		break;
+	case POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE:
+		chg->quick_charge_type = val->intval;
+		queue_delayed_work(system_power_efficient_wq,
+				&chg->report_soc_decimal_work,
+				msecs_to_jiffies(REPORT_SOC_DECIMAL_MS));
+		break;
+	case POWER_SUPPLY_PROP_QUICK_CHARGE_POWER:
+		chg->quick_charge_power = val->intval;
+		break;
 	case POWER_SUPPLY_PROP_APSD_RERUN:
 		del_timer_sync(&chg->apsd_timer);
 		chg->apsd_ext_timeout = false;
@@ -1709,6 +1722,8 @@ static int smb5_usb_prop_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_FASTCHARGE_MODE:
 	case POWER_SUPPLY_PROP_PD_AUTHENTICATION:
 	case POWER_SUPPLY_PROP_ADAPTER_CC_MODE:
+	case POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE:
+	case POWER_SUPPLY_PROP_QUICK_CHARGE_POWER:
 	case POWER_SUPPLY_PROP_APSD_RERUN:
 	case POWER_SUPPLY_PROP_APDO_MAX:
 	case POWER_SUPPLY_PROP_FFC_TERMINATION_BBC:
