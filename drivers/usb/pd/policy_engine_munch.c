@@ -5550,6 +5550,7 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 	union power_supply_propval val = {0};
 	int pps_max_watts = 0;
 	int pps_max_mwatt = 0;
+	bool allow_pps_fast_charge = false;
 
 	for (i = 0; i < ARRAY_SIZE(pd->received_pdos); i++) {
 		u32 pdo = pd->received_pdos[i];
@@ -5592,25 +5593,35 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 				max_volt, min_volt, max_curr);
 	}
 	//usbpd_err(&pd->dev, "huangrui add pps_max_watts[%d],pd->apdo_max:%d\n", pps_max_watts / 1000  / 1000,pd->apdo_max);
-	if (pd->verifed) {
-		pps_max_mwatt = pps_max_watts / 1000  / 1000;
-		//if (pps_max_mwatt != pd->apdo_max) {
-		pd->apdo_max = pps_max_mwatt;
-		val.intval = pps_max_mwatt;
-		power_supply_set_property(pd->usb_psy,
-				POWER_SUPPLY_PROP_APDO_MAX, &val);
-		usbpd_err(&pd->dev, "pps_max_watts[%d]\n", pps_max_mwatt);
-		//}
-	}
+	pps_max_mwatt = pps_max_watts / 1000  / 1000;
 
 	if (pd->batt_2s) {
 		if (!pd->verify_done || !pd->is_support_2s)
 			pd->pps_found = false;
 
+		if (pd->pps_found && pd->is_support_2s &&
+				pps_max_watts >= USBPD_LOW_PPS_POWER)
+			allow_pps_fast_charge = true;
+
 		if (!pd->pps_found) {
 			vote(pd->ffc_mode_dis_votable, USBPD_VOTER, true, 0);
 		}
+	}
 
+	if (pd->verifed)
+		allow_pps_fast_charge = true;
+
+	if (allow_pps_fast_charge) {
+		//if (pps_max_mwatt != pd->apdo_max) {
+		pd->apdo_max = pps_max_mwatt;
+		val.intval = pps_max_mwatt;
+		power_supply_set_property(pd->usb_psy,
+				POWER_SUPPLY_PROP_APDO_MAX, &val);
+		usbpd_info(&pd->dev, "pps_max_watts[%d]\n", pps_max_mwatt);
+		//}
+	}
+
+	if (pd->batt_2s) {
 		if (passthrough_curr_max != 0) {
 			if (!pd->verifed)
 				passthrough_curr_max = max(passthrough_curr_max,
@@ -5624,7 +5635,7 @@ static void usbpd_pdo_workfunc(struct work_struct *w)
 			}
 		}
 
-		if (pd->verifed) {
+		if (allow_pps_fast_charge) {
 			if (pps_max_watts >= USBPD_SUPER_PPS_POWER)
 				val.intval = QUICK_CHARGE_SUPER;
 			else
@@ -5952,4 +5963,3 @@ module_exit(usbpd_exit);
 
 MODULE_DESCRIPTION("USB Power Delivery Policy Engine");
 MODULE_LICENSE("GPL v2");
-
