@@ -40,28 +40,37 @@
 * Private constant and macro definitions using #define
 *****************************************************************************/
 #define FTS_FW_REQUEST_SUPPORT                      1
+#define FTS_FW_BUILTIN_SUPPORT                      0
 /* Example: focaltech_ts_fw_tianma.bin */
 #define FTS_FW_NAME_PREX_WITH_REQUEST               "focaltech_ts_fw"
 
 /*****************************************************************************
 * Global variable or extern global variabls/functions
 *****************************************************************************/
-u8 fw_file[] = {
+#if FTS_FW_BUILTIN_SUPPORT
+static u8 fw_file[] = {
 #include FTS_UPGRADE_FW_FILE
 };
 
-u8 fw_file2[] = {
+static u8 fw_file2[] = {
 #include FTS_UPGRADE_FW2_FILE
 };
 
-u8 fw_file3[] = {
+static u8 fw_file3[] = {
 #include FTS_UPGRADE_FW3_FILE
 };
+#endif
 
 struct upgrade_module module_list[] = {
+#if FTS_FW_BUILTIN_SUPPORT
 	{FTS_MODULE_ID, FTS_MODULE_NAME, fw_file, sizeof(fw_file)},
 	{FTS_MODULE2_ID, FTS_MODULE2_NAME, fw_file2, sizeof(fw_file2)},
 	{FTS_MODULE3_ID, FTS_MODULE3_NAME, fw_file3, sizeof(fw_file3)},
+#else
+	{FTS_MODULE_ID, FTS_MODULE_NAME, NULL, 0},
+	{FTS_MODULE2_ID, FTS_MODULE2_NAME, NULL, 0},
+	{FTS_MODULE3_ID, FTS_MODULE3_NAME, NULL, 0},
+#endif
 };
 
 struct upgrade_func *upgrade_func_list[] = {
@@ -1892,11 +1901,19 @@ static int fts_get_fw_file_via_request_firmware(struct fts_upgrade *upg)
 
 static int fts_get_fw_file_via_i(struct fts_upgrade *upg)
 {
+#if FTS_FW_BUILTIN_SUPPORT
 	upg->fw = upg->module_info->fw_file;
 	upg->fw_length = upg->module_info->fw_len;
 	upg->fw_from_request = 0;
 
 	return 0;
+#else
+	upg->fw = NULL;
+	upg->fw_length = 0;
+	upg->fw_from_request = 0;
+
+	return -ENOENT;
+#endif
 }
 
 /*****************************************************************************
