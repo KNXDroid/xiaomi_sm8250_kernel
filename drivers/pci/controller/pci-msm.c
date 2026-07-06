@@ -5354,7 +5354,7 @@ static void msm_pcie_init_device_state(struct msm_pcie_dev_t *pcie_dev)
 	}
 }
 
-static int msm_pcie_probe(struct platform_device *pdev)
+static int __cold msm_pcie_probe(struct platform_device *pdev)
 {
 	int ret = 0;
 	int rc_idx = -1;
