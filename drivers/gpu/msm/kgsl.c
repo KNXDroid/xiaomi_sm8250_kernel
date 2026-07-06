@@ -1700,17 +1700,13 @@ static long kgsl_prop_query_capabilities(struct kgsl_device_private *dev_priv,
 	return ret;
 }
 
-static const struct {
-	int type;
-	long (*func)(struct kgsl_device_private *dev_priv,
-		struct kgsl_device_getproperty *param);
-} kgsl_property_funcs[] = {
-	{ KGSL_PROP_VERSION, kgsl_prop_version },
-	{ KGSL_PROP_GPU_RESET_STAT, kgsl_prop_gpu_reset_stat},
-	{ KGSL_PROP_SECURE_BUFFER_ALIGNMENT, kgsl_prop_secure_buf_alignment },
-	{ KGSL_PROP_SECURE_CTXT_SUPPORT, kgsl_prop_secure_ctxt_support },
-	{ KGSL_PROP_QUERY_CAPABILITIES, kgsl_prop_query_capabilities },
-	{ KGSL_PROP_CONTEXT_PROPERTY, kgsl_get_ctxt_properties },
+static const u32 kgsl_property_types[] = {
+	KGSL_PROP_VERSION,
+	KGSL_PROP_GPU_RESET_STAT,
+	KGSL_PROP_SECURE_BUFFER_ALIGNMENT,
+	KGSL_PROP_SECURE_CTXT_SUPPORT,
+	KGSL_PROP_QUERY_CAPABILITIES,
+	KGSL_PROP_CONTEXT_PROPERTY,
 };
 
 /*call all ioctl sub functions with driver locked*/
@@ -1719,11 +1715,20 @@ long kgsl_ioctl_device_getproperty(struct kgsl_device_private *dev_priv,
 {
 	struct kgsl_device *device = dev_priv->device;
 	struct kgsl_device_getproperty *param = data;
-	int i;
 
-	for (i = 0; i < ARRAY_SIZE(kgsl_property_funcs); i++) {
-		if (param->type == kgsl_property_funcs[i].type)
-			return kgsl_property_funcs[i].func(dev_priv, param);
+	switch (param->type) {
+	case KGSL_PROP_VERSION:
+		return kgsl_prop_version(dev_priv, param);
+	case KGSL_PROP_GPU_RESET_STAT:
+		return kgsl_prop_gpu_reset_stat(dev_priv, param);
+	case KGSL_PROP_SECURE_BUFFER_ALIGNMENT:
+		return kgsl_prop_secure_buf_alignment(dev_priv, param);
+	case KGSL_PROP_SECURE_CTXT_SUPPORT:
+		return kgsl_prop_secure_ctxt_support(dev_priv, param);
+	case KGSL_PROP_QUERY_CAPABILITIES:
+		return kgsl_prop_query_capabilities(dev_priv, param);
+	case KGSL_PROP_CONTEXT_PROPERTY:
+		return kgsl_get_ctxt_properties(dev_priv, param);
 	}
 
 	if (is_compat_task())
@@ -1737,7 +1742,7 @@ int kgsl_query_property_list(struct kgsl_device *device, u32 *list, u32 count)
 	int num = 0;
 
 	if (!list) {
-		num = ARRAY_SIZE(kgsl_property_funcs);
+		num = ARRAY_SIZE(kgsl_property_types);
 
 		if (device->ftbl->query_property_list)
 			num += device->ftbl->query_property_list(device, list,
@@ -1746,8 +1751,8 @@ int kgsl_query_property_list(struct kgsl_device *device, u32 *list, u32 count)
 		return num;
 	}
 
-	for (; num < count && num < ARRAY_SIZE(kgsl_property_funcs); num++)
-		list[num] = kgsl_property_funcs[num].type;
+	for (; num < count && num < ARRAY_SIZE(kgsl_property_types); num++)
+		list[num] = kgsl_property_types[num];
 
 	if (device->ftbl->query_property_list)
 		num += device->ftbl->query_property_list(device, &list[num],
