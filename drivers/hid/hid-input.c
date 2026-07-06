@@ -215,6 +215,79 @@ static const unsigned short hid_consumer_keymap[] = {
 	[0x2cc] = KEY_KBDINPUTASSIST_CANCEL,
 };
 
+static const unsigned short hid_system_keymap[] = {
+	[0x1] = KEY_POWER,
+	[0x2] = KEY_SLEEP,
+	[0x3] = KEY_WAKEUP,
+	[0x4] = KEY_CONTEXT_MENU,
+	[0x5] = KEY_MENU,
+	[0x6] = KEY_PROG1,
+	[0x7] = KEY_HELP,
+	[0x8] = KEY_EXIT,
+	[0x9] = KEY_SELECT,
+	[0xa] = KEY_RIGHT,
+	[0xb] = KEY_LEFT,
+	[0xc] = KEY_UP,
+	[0xd] = KEY_DOWN,
+	[0xe] = KEY_POWER2,
+	[0xf] = KEY_RESTART,
+};
+
+static const unsigned char hid_led_map[] = {
+	[0x01] = LED_NUML + 1,
+	[0x02] = LED_CAPSL + 1,
+	[0x03] = LED_SCROLLL + 1,
+	[0x04] = LED_COMPOSE + 1,
+	[0x05] = LED_KANA + 1,
+	[0x09] = LED_MUTE + 1,
+	[0x19] = LED_MAIL + 1,
+	[0x27] = LED_SLEEP + 1,
+	[0x4b] = LED_MISC + 1,
+	[0x4c] = LED_SUSPEND + 1,
+	[0x4d] = LED_CHARGING + 1,
+};
+
+static const unsigned short hid_telephony_keymap[] = {
+	[0x2f] = KEY_MICMUTE,
+	[0xb0] = KEY_NUMERIC_0,
+	[0xb1] = KEY_NUMERIC_1,
+	[0xb2] = KEY_NUMERIC_2,
+	[0xb3] = KEY_NUMERIC_3,
+	[0xb4] = KEY_NUMERIC_4,
+	[0xb5] = KEY_NUMERIC_5,
+	[0xb6] = KEY_NUMERIC_6,
+	[0xb7] = KEY_NUMERIC_7,
+	[0xb8] = KEY_NUMERIC_8,
+	[0xb9] = KEY_NUMERIC_9,
+	[0xba] = KEY_NUMERIC_STAR,
+	[0xbb] = KEY_NUMERIC_POUND,
+	[0xbc] = KEY_NUMERIC_A,
+	[0xbd] = KEY_NUMERIC_B,
+	[0xbe] = KEY_NUMERIC_C,
+	[0xbf] = KEY_NUMERIC_D,
+};
+
+static const unsigned short hid_hp_keymap[] = {
+	[0x021] = KEY_PRINT,
+	[0x070] = KEY_HP,
+	[0x071] = KEY_CAMERA,
+	[0x072] = KEY_SOUND,
+	[0x073] = KEY_QUESTION,
+	[0x080] = KEY_EMAIL,
+	[0x081] = KEY_CHAT,
+	[0x082] = KEY_SEARCH,
+	[0x083] = KEY_CONNECT,
+	[0x084] = KEY_FINANCE,
+	[0x085] = KEY_SPORT,
+	[0x086] = KEY_SHOP,
+};
+
+static const unsigned short hid_hp2_keymap[] = {
+	[0x001] = KEY_MICMUTE,
+	[0x003] = KEY_BRIGHTNESSDOWN,
+	[0x004] = KEY_BRIGHTNESSUP,
+};
+
 static const struct {
 	__s32 x;
 	__s32 y;
@@ -822,24 +895,11 @@ static void hidinput_configure_usage(struct hid_input *hidinput, struct hid_fiel
 
 	case HID_UP_GENDESK:
 		if ((usage->hid & 0xf0) == 0x80) {	/* SystemControl */
-			switch (usage->hid & 0xf) {
-			case 0x1: map_key_clear(KEY_POWER);  break;
-			case 0x2: map_key_clear(KEY_SLEEP);  break;
-			case 0x3: map_key_clear(KEY_WAKEUP); break;
-			case 0x4: map_key_clear(KEY_CONTEXT_MENU); break;
-			case 0x5: map_key_clear(KEY_MENU); break;
-			case 0x6: map_key_clear(KEY_PROG1); break;
-			case 0x7: map_key_clear(KEY_HELP); break;
-			case 0x8: map_key_clear(KEY_EXIT); break;
-			case 0x9: map_key_clear(KEY_SELECT); break;
-			case 0xa: map_key_clear(KEY_RIGHT); break;
-			case 0xb: map_key_clear(KEY_LEFT); break;
-			case 0xc: map_key_clear(KEY_UP); break;
-			case 0xd: map_key_clear(KEY_DOWN); break;
-			case 0xe: map_key_clear(KEY_POWER2); break;
-			case 0xf: map_key_clear(KEY_RESTART); break;
-			default: goto unknown;
-			}
+			code = usage->hid & 0xf;
+			if (!code || code >= ARRAY_SIZE(hid_system_keymap) ||
+					!hid_system_keymap[code])
+				goto unknown;
+			map_key_clear(hid_system_keymap[code]);
 			break;
 		}
 
@@ -917,21 +977,10 @@ static void hidinput_configure_usage(struct hid_input *hidinput, struct hid_fiel
 		break;
 
 	case HID_UP_LED:
-		switch (usage->hid & 0xffff) {		      /* HID-Value:                   */
-		case 0x01:  map_led (LED_NUML);     break;    /*   "Num Lock"                 */
-		case 0x02:  map_led (LED_CAPSL);    break;    /*   "Caps Lock"                */
-		case 0x03:  map_led (LED_SCROLLL);  break;    /*   "Scroll Lock"              */
-		case 0x04:  map_led (LED_COMPOSE);  break;    /*   "Compose"                  */
-		case 0x05:  map_led (LED_KANA);     break;    /*   "Kana"                     */
-		case 0x27:  map_led (LED_SLEEP);    break;    /*   "Stand-By"                 */
-		case 0x4c:  map_led (LED_SUSPEND);  break;    /*   "System Suspend"           */
-		case 0x09:  map_led (LED_MUTE);     break;    /*   "Mute"                     */
-		case 0x4b:  map_led (LED_MISC);     break;    /*   "Generic Indicator"        */
-		case 0x19:  map_led (LED_MAIL);     break;    /*   "Message Waiting"          */
-		case 0x4d:  map_led (LED_CHARGING); break;    /*   "External Power Connected" */
-
-		default: goto ignore;
-		}
+		code = usage->hid & 0xffff;
+		if (code >= ARRAY_SIZE(hid_led_map) || !hid_led_map[code])
+			goto ignore;
+		map_led(hid_led_map[code] - 1);
 		break;
 
 	case HID_UP_DIGITIZER:
@@ -1010,26 +1059,11 @@ static void hidinput_configure_usage(struct hid_input *hidinput, struct hid_fiel
 		break;
 
 	case HID_UP_TELEPHONY:
-		switch (usage->hid & HID_USAGE) {
-		case 0x2f: map_key_clear(KEY_MICMUTE);		break;
-		case 0xb0: map_key_clear(KEY_NUMERIC_0);	break;
-		case 0xb1: map_key_clear(KEY_NUMERIC_1);	break;
-		case 0xb2: map_key_clear(KEY_NUMERIC_2);	break;
-		case 0xb3: map_key_clear(KEY_NUMERIC_3);	break;
-		case 0xb4: map_key_clear(KEY_NUMERIC_4);	break;
-		case 0xb5: map_key_clear(KEY_NUMERIC_5);	break;
-		case 0xb6: map_key_clear(KEY_NUMERIC_6);	break;
-		case 0xb7: map_key_clear(KEY_NUMERIC_7);	break;
-		case 0xb8: map_key_clear(KEY_NUMERIC_8);	break;
-		case 0xb9: map_key_clear(KEY_NUMERIC_9);	break;
-		case 0xba: map_key_clear(KEY_NUMERIC_STAR);	break;
-		case 0xbb: map_key_clear(KEY_NUMERIC_POUND);	break;
-		case 0xbc: map_key_clear(KEY_NUMERIC_A);	break;
-		case 0xbd: map_key_clear(KEY_NUMERIC_B);	break;
-		case 0xbe: map_key_clear(KEY_NUMERIC_C);	break;
-		case 0xbf: map_key_clear(KEY_NUMERIC_D);	break;
-		default: goto ignore;
-		}
+		code = usage->hid & HID_USAGE;
+		if (code >= ARRAY_SIZE(hid_telephony_keymap) ||
+				!hid_telephony_keymap[code])
+			goto ignore;
+		map_key_clear(hid_telephony_keymap[code]);
 		break;
 
 	case HID_UP_CONSUMER: {	/* USB HUT v1.12, pages 75-84 */
@@ -1065,31 +1099,19 @@ static void hidinput_configure_usage(struct hid_input *hidinput, struct hid_fiel
 
 	case HID_UP_HPVENDOR:	/* Reported on a Dutch layout HP5308 */
 		set_bit(EV_REP, input->evbit);
-		switch (usage->hid & HID_USAGE) {
-		case 0x021: map_key_clear(KEY_PRINT);           break;
-		case 0x070: map_key_clear(KEY_HP);		break;
-		case 0x071: map_key_clear(KEY_CAMERA);		break;
-		case 0x072: map_key_clear(KEY_SOUND);		break;
-		case 0x073: map_key_clear(KEY_QUESTION);	break;
-		case 0x080: map_key_clear(KEY_EMAIL);		break;
-		case 0x081: map_key_clear(KEY_CHAT);		break;
-		case 0x082: map_key_clear(KEY_SEARCH);		break;
-		case 0x083: map_key_clear(KEY_CONNECT);	        break;
-		case 0x084: map_key_clear(KEY_FINANCE);		break;
-		case 0x085: map_key_clear(KEY_SPORT);		break;
-		case 0x086: map_key_clear(KEY_SHOP);	        break;
-		default:    goto ignore;
-		}
+		code = usage->hid & HID_USAGE;
+		if (code >= ARRAY_SIZE(hid_hp_keymap) || !hid_hp_keymap[code])
+			goto ignore;
+		map_key_clear(hid_hp_keymap[code]);
 		break;
 
 	case HID_UP_HPVENDOR2:
 		set_bit(EV_REP, input->evbit);
-		switch (usage->hid & HID_USAGE) {
-		case 0x001: map_key_clear(KEY_MICMUTE);		break;
-		case 0x003: map_key_clear(KEY_BRIGHTNESSDOWN);	break;
-		case 0x004: map_key_clear(KEY_BRIGHTNESSUP);	break;
-		default:    goto ignore;
-		}
+		code = usage->hid & HID_USAGE;
+		if (code >= ARRAY_SIZE(hid_hp2_keymap) ||
+				!hid_hp2_keymap[code])
+			goto ignore;
+		map_key_clear(hid_hp2_keymap[code]);
 		break;
 
 	case HID_UP_MSVENDOR:
