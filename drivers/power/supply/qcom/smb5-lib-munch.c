@@ -4887,7 +4887,7 @@ static void smblib_report_soc_decimal_work(struct work_struct *work)
 
 	quick_charge_type = smblib_get_quick_charge_type(chg);
 
-	if (QUICK_CHARGE_TURBE == quick_charge_type)
+	if (QUICK_CHARGE_TURBE <= quick_charge_type)
 		power_supply_changed(chg->bms_psy);
 }
 
@@ -8759,10 +8759,13 @@ struct quick_charge adapter_cap[11] = {
 #define ADAPTER_VOICE_BOX_PWR_30W     0xd
 #define ADAPTER_XIAOMI_PD_PWR_50W     0xe
 #define ADAPTER_XIAOMI_PD_PWR_60W     0xf
+#define WIRE_SUPER_POWER_MAX          50
 int smblib_get_quick_charge_type(struct smb_charger *chg)
 {
 	int i = 0, rc;
 	int tx_adapter = 0, wls_online = 0;
+	int power_max = 0;
+	int quick_charge_type = 0;
 	union power_supply_propval pval = {0, };
 
 	if (!chg) {
@@ -8779,8 +8782,17 @@ int smblib_get_quick_charge_type(struct smb_charger *chg)
 		return 0;
 	}
 
+	if (chg->real_charger_type == POWER_SUPPLY_TYPE_USB_PD && chg->quick_charge_type)
+		return chg->quick_charge_type;
+
 	if ((chg->real_charger_type == POWER_SUPPLY_TYPE_USB_PD) && chg->pd_verifed) {
-		return QUICK_CHARGE_TURBE;
+		power_max = smblib_get_adapter_power_max(chg);
+		if (power_max >= WIRE_SUPER_POWER_MAX)
+			quick_charge_type = QUICK_CHARGE_SUPER;
+		else
+			quick_charge_type = QUICK_CHARGE_TURBE;
+
+		return quick_charge_type;
 	}
 
 	if (chg->is_qc_class_b || chg->real_charger_type == POWER_SUPPLY_TYPE_USB_HVDCP_3P5)
@@ -8798,7 +8810,9 @@ int smblib_get_quick_charge_type(struct smb_charger *chg)
 		wls_online = pval.intval;
 
 		if (wls_online) {
-			if (tx_adapter >= ADAPTER_XIAOMI_QC3_PWR_20W)
+			if (tx_adapter >= ADAPTER_XIAOMI_PD_PWR_30W)
+				return QUICK_CHARGE_SUPER;
+			else if (tx_adapter >= ADAPTER_XIAOMI_QC3_PWR_20W)
 				return QUICK_CHARGE_TURBE;
 			else if (tx_adapter > ADAPTER_PWR_NONE)
 				return QUICK_CHARGE_NORMAL;
@@ -9706,6 +9720,8 @@ static void typec_src_removal(struct smb_charger *chg)
 	chg->cc_un_compliant_detected = false;
 	chg->report_input_absent = false;
 	chg->qc3_raise_done = false;
+	chg->quick_charge_type = QUICK_CHARGE_NORMAL;
+	chg->quick_charge_power = 0;
 
 	if (chg->pd_verifed) {
 		chg->pd_verifed = false;

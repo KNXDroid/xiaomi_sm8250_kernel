@@ -266,6 +266,7 @@ enum quick_charge_type {
 	QUICK_CHARGE_FAST,
 	QUICK_CHARGE_FLASH,
 	QUICK_CHARGE_TURBE,
+	QUICK_CHARGE_SUPER,
 	QUICK_CHARGE_MAX,
 };
 
@@ -813,6 +814,8 @@ struct smb_charger {
 	int			usbin_forced_max_uv;
 	int			init_thermal_ua;
 	int			pd_verifed;
+	int			quick_charge_type;
+	int			quick_charge_power;
 	u32			comp_clamp_level;
 	int			wls_icl_ua;
 	int			capacity;
