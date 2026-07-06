@@ -8269,10 +8269,7 @@ static int qseecom_open(struct inode *inode, struct file *file)
 	if (!data)
 		return -ENOMEM;
 	file->private_data = data;
-	data->abort = 0;
 	data->type = QSEECOM_GENERIC;
-	data->released = false;
-	memset((void *)data->client.app_name, 0, MAX_APP_NAME_SIZE);
 	data->mode = INACTIVE;
 	init_waitqueue_head(&data->abort_wq);
 	atomic_set(&data->ioctl_count, 0);
