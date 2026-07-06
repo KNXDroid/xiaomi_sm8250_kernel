@@ -8270,7 +8270,6 @@ static int qseecom_open(struct inode *inode, struct file *file)
 		return -ENOMEM;
 	file->private_data = data;
 	data->type = QSEECOM_GENERIC;
-	data->mode = INACTIVE;
 	init_waitqueue_head(&data->abort_wq);
 	atomic_set(&data->ioctl_count, 0);
 	data->sglistinfo_ptr = (struct sglist_info *)__qseecom_alloc_tzbuf(
