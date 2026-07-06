@@ -31611,9 +31611,6 @@ int __init msm_soc_routing_platform_init(void)
 	afe_set_routing_callback(
 		(routing_cb)msm_pcm_get_dev_acdb_id_by_port_id);
 
-	memset(&be_dai_name_table, 0, sizeof(be_dai_name_table));
-	memset(&last_be_id_configured, 0, sizeof(last_be_id_configured));
-
 	return platform_driver_register(&msm_routing_pcm_driver);
 }
 
