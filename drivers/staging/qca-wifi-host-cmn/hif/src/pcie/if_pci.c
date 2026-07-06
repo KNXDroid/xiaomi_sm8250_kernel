@@ -466,9 +466,9 @@ static void hif_pci_device_reset(struct hif_pci_softc *sc)
 static void hif_pci_device_warm_reset(struct hif_pci_softc *sc)
 {
 	void __iomem *mem = sc->mem;
+	void __iomem *reset_addr;
 	int i;
 	uint32_t val;
-	uint32_t fw_indicator;
 	struct hif_softc *scn = HIF_GET_SOFTC(sc);
 
 	/* NB: Don't check resetok here.  This form of reset is
@@ -506,10 +506,6 @@ static void hif_pci_device_warm_reset(struct hif_pci_softc *sc)
 			    (SOC_CORE_BASE_ADDRESS | CPU_INTR_ADDRESS));
 	HIF_INFO_MED("%s: Target CPU Intr Cause 0x%x", __func__, val);
 
-	val =
-		hif_read32_mb(sc, mem +
-			     (SOC_CORE_BASE_ADDRESS |
-			      PCIE_INTR_ENABLE_ADDRESS));
 	hif_write32_mb(sc, (mem +
 		       (SOC_CORE_BASE_ADDRESS | PCIE_INTR_ENABLE_ADDRESS)), 0);
 	hif_write32_mb(sc, (mem +
@@ -519,10 +515,8 @@ static void hif_pci_device_warm_reset(struct hif_pci_softc *sc)
 	qdf_mdelay(100);
 
 	/* Clear FW_INDICATOR_ADDRESS */
-	if (HAS_FW_INDICATOR) {
-		fw_indicator = hif_read32_mb(sc, mem + FW_INDICATOR_ADDRESS);
+	if (HAS_FW_INDICATOR)
 		hif_write32_mb(sc, mem + FW_INDICATOR_ADDRESS, 0);
-	}
 
 	/* Clear Target LF Timer interrupts */
 	val =
@@ -537,28 +531,17 @@ static void hif_pci_device_warm_reset(struct hif_pci_softc *sc)
 		      val);
 
 	/* Reset CE */
-	val =
-		hif_read32_mb(sc, mem +
-			     (RTC_SOC_BASE_ADDRESS |
-			      SOC_RESET_CONTROL_ADDRESS));
+	reset_addr = mem + (RTC_SOC_BASE_ADDRESS | SOC_RESET_CONTROL_ADDRESS);
+	val = hif_read32_mb(sc, reset_addr);
 	val |= SOC_RESET_CONTROL_CE_RST_MASK;
-	hif_write32_mb(sc, (mem +
-		       (RTC_SOC_BASE_ADDRESS | SOC_RESET_CONTROL_ADDRESS)),
-		      val);
-	val =
-		hif_read32_mb(sc, mem +
-			     (RTC_SOC_BASE_ADDRESS |
-			      SOC_RESET_CONTROL_ADDRESS));
+	hif_write32_mb(sc, reset_addr, val);
+	val = hif_read32_mb(sc, reset_addr);
 	qdf_mdelay(10);
 
 	/* CE unreset */
 	val &= ~SOC_RESET_CONTROL_CE_RST_MASK;
-	hif_write32_mb(sc, mem + (RTC_SOC_BASE_ADDRESS |
-		       SOC_RESET_CONTROL_ADDRESS), val);
-	val =
-		hif_read32_mb(sc, mem +
-			     (RTC_SOC_BASE_ADDRESS |
-			      SOC_RESET_CONTROL_ADDRESS));
+	hif_write32_mb(sc, reset_addr, val);
+	val = hif_read32_mb(sc, reset_addr);
 	qdf_mdelay(10);
 
 	/* Read Target CPU Intr Cause */
@@ -568,17 +551,10 @@ static void hif_pci_device_warm_reset(struct hif_pci_softc *sc)
 		    __func__, val);
 
 	/* CPU warm RESET */
-	val =
-		hif_read32_mb(sc, mem +
-			     (RTC_SOC_BASE_ADDRESS |
-			      SOC_RESET_CONTROL_ADDRESS));
+	val = hif_read32_mb(sc, reset_addr);
 	val |= SOC_RESET_CONTROL_CPU_WARM_RST_MASK;
-	hif_write32_mb(sc, mem + (RTC_SOC_BASE_ADDRESS |
-		       SOC_RESET_CONTROL_ADDRESS), val);
-	val =
-		hif_read32_mb(sc, mem +
-			     (RTC_SOC_BASE_ADDRESS |
-			      SOC_RESET_CONTROL_ADDRESS));
+	hif_write32_mb(sc, reset_addr, val);
+	val = hif_read32_mb(sc, reset_addr);
 	HIF_INFO_MED("%s: RESET_CONTROL after cpu warm reset 0x%x",
 		    __func__, val);
 
