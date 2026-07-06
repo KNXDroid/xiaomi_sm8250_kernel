@@ -473,11 +473,11 @@ void set_zone_thres(struct bwmon *m, unsigned int sample_ms,
 	lo = 0;
 
 	if (unlikely((hi > m->thres_lim) || (med > hi) || (lo > med))) {
-		pr_warn("Zone thres larger than hw limit: hi:%u med:%u lo:%u\n",
+		pr_warn_once("Zone thres larger than hw limit, clamping: hi:%u med:%u lo:%u\n",
 				hi, med, lo);
 		hi = min(hi, m->thres_lim);
-		med = min(med, hi - 1);
-		lo = min(lo, med-1);
+		med = min(med, hi ? hi - 1 : 0);
+		lo = min(lo, med ? med - 1 : 0);
 	}
 
 	switch (type) {
