@@ -1476,6 +1476,7 @@ int msm_pcm_routing_reg_phy_compr_stream(int fe_id, int perf_mode,
 	struct route_payload payload;
 	u32 channels, sample_rate;
 	u16 bit_width = 16, be_bit_width;
+	unsigned long copp;
 	bool is_lsm;
 
 	pr_debug("%s:fe_id[%d] perf_mode[%d] id[%d] stream_type[%d] passt[%d]",
@@ -1608,9 +1609,8 @@ int msm_pcm_routing_reg_phy_compr_stream(int fe_id, int perf_mode,
 				adm_copp_mfc_cfg(port_id, copp_idx,
 					msm_bedais[i].sample_rate);
 
+			copp = session_copp_map[fe_id][session_type][i];
 			for (j = 0; j < MAX_COPPS_PER_PORT; j++) {
-				unsigned long copp =
-				session_copp_map[fe_id][session_type][i];
 				if (test_bit(j, &copp)) {
 					payload.port_id[num_copps] = port_id;
 					payload.copp_idx[num_copps] = j;
@@ -1873,6 +1873,7 @@ int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
 	u32 channels, sample_rate;
 	uint16_t bits_per_sample = 16, be_bit_width;
 	uint32_t passthr_mode = LEGACY_PCM;
+	unsigned long copp;
 	int ret = 0;
 
 	if (fedai_id > MSM_FRONTEND_DAI_MM_MAX_ID) {
@@ -1974,9 +1975,8 @@ int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
 				adm_copp_mfc_cfg(port_id, copp_idx,
 					msm_bedais[i].sample_rate);
 
+			copp = session_copp_map[fedai_id][session_type][i];
 			for (j = 0; j < MAX_COPPS_PER_PORT; j++) {
-				unsigned long copp =
-				    session_copp_map[fedai_id][session_type][i];
 				if (test_bit(j, &copp)) {
 					payload.port_id[num_copps] = port_id;
 					payload.copp_idx[num_copps] = j;
@@ -30878,14 +30878,14 @@ static int msm_routing_put_device_pp_params_mixer(struct snd_kcontrol *kcontrol,
 
 	for_each_set_bit(i, &msm_bedais[be_idx].fe_sessions[0],
 				MSM_FRONTEND_DAI_MM_SIZE) {
+		unsigned long copp =
+			session_copp_map[i][SESSION_TYPE_RX][be_idx];
+
 		if ((fe_dai_map[i][session_type].passthr_mode == LEGACY_PCM) ||
 			(fe_dai_map[i][session_type].passthr_mode == LISTEN))
 			compr_passthr_mode = false;
 
 		for (idx = 0; idx < MAX_COPPS_PER_PORT; idx++) {
-			unsigned long copp =
-				session_copp_map[i]
-				[SESSION_TYPE_RX][be_idx];
 			if (!test_bit(idx, &copp))
 				continue;
 			topo_id = adm_get_topology_for_port_copp_idx(port_id,
