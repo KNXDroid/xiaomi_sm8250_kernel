@@ -48,6 +48,8 @@ static inline bool _msm_seamless_for_crtc(struct drm_device *dev,
 	struct drm_connector_state  *conn_state = NULL;
 	struct msm_drm_private *priv = dev->dev_private;
 	struct msm_kms *kms = priv->kms;
+	const bool check_for_splash = kms && kms->funcs &&
+			kms->funcs->check_for_splash;
 	int i = 0;
 	int conn_cnt = 0;
 	bool splash_en = false;
@@ -62,16 +64,16 @@ static inline bool _msm_seamless_for_crtc(struct drm_device *dev,
 		return true;
 
 	if (!crtc_state->mode_changed && crtc_state->connectors_changed) {
+		if (check_for_splash)
+			splash_en = kms->funcs->check_for_splash(kms,
+						crtc_state->crtc);
+
 		for_each_old_connector_in_state(state, connector,
 				conn_state, i) {
 			if ((conn_state->crtc == crtc_state->crtc) ||
 					(connector->state->crtc ==
 					 crtc_state->crtc))
 				conn_cnt++;
-
-			if (kms && kms->funcs && kms->funcs->check_for_splash)
-				splash_en = kms->funcs->check_for_splash(kms,
-							 crtc_state->crtc);
 
 			if (MULTIPLE_CONN_DETECTED(conn_cnt) && !splash_en)
 				return true;
@@ -84,12 +86,18 @@ static inline bool _msm_seamless_for_crtc(struct drm_device *dev,
 static inline bool _msm_seamless_for_conn(struct drm_connector *connector,
 		struct drm_connector_state *old_conn_state, bool enable)
 {
+	struct drm_crtc_state *old_crtc_state;
+	struct drm_crtc_state *new_crtc_state;
+
 	if (!old_conn_state || !old_conn_state->crtc)
 		return false;
 
-	if (!old_conn_state->crtc->state->mode_changed &&
-			!old_conn_state->crtc->state->active_changed &&
-			old_conn_state->crtc->state->connectors_changed) {
+	old_crtc_state = old_conn_state->crtc->state;
+	new_crtc_state = connector->encoder->crtc->state;
+
+	if (!old_crtc_state->mode_changed &&
+			!old_crtc_state->active_changed &&
+			old_crtc_state->connectors_changed) {
 		if (old_conn_state->crtc == connector->state->crtc)
 			return true;
 	}
@@ -98,22 +106,19 @@ static inline bool _msm_seamless_for_conn(struct drm_connector *connector,
 		return false;
 
 	if (!connector->state->crtc &&
-		old_conn_state->crtc->state->connectors_changed)
+		old_crtc_state->connectors_changed)
 		return false;
 
-	if (msm_is_mode_seamless(&connector->encoder->crtc->state->mode))
+	if (msm_is_mode_seamless(&new_crtc_state->mode))
 		return true;
 
-	if (msm_is_mode_seamless_vrr(
-			&connector->encoder->crtc->state->adjusted_mode))
+	if (msm_is_mode_seamless_vrr(&new_crtc_state->adjusted_mode))
 		return true;
 
-	if (msm_is_mode_seamless_dyn_clk(
-			 &connector->encoder->crtc->state->adjusted_mode))
+	if (msm_is_mode_seamless_dyn_clk(&new_crtc_state->adjusted_mode))
 		return true;
 
-	if (msm_is_mode_seamless_dms(
-			&connector->encoder->crtc->state->adjusted_mode))
+	if (msm_is_mode_seamless_dms(&new_crtc_state->adjusted_mode))
 		return true;
 
 	return false;
@@ -572,26 +577,27 @@ static void msm_atomic_commit_dispatch(struct drm_device *dev,
 	struct msm_drm_private *priv = dev->dev_private;
 	struct drm_crtc *crtc = NULL;
 	struct drm_crtc_state *crtc_state = NULL;
-	int ret = -ECANCELED, i = 0, j = 0;
+	int ret = -ECANCELED, i = 0;
 
 	for_each_old_crtc_in_state(state, crtc, crtc_state, i) {
-		for (j = 0; j < priv->num_crtcs; j++) {
-			if (priv->disp_thread[j].crtc_id ==
-						crtc->base.id) {
-				if (priv->disp_thread[j].thread) {
-					kthread_queue_work(
-						&priv->disp_thread[j].worker,
-							&commit->commit_work);
-					/* only return zero if work is
-					 * queued successfully.
-					 */
-					ret = 0;
-				} else {
-					DRM_ERROR(" Error for crtc_id: %d\n",
-						priv->disp_thread[j].crtc_id);
-					ret = -EINVAL;
-				}
-				break;
+		unsigned int crtc_idx = drm_crtc_index(crtc);
+		bool found = false;
+
+		if (crtc_idx < priv->num_crtcs &&
+		    priv->disp_thread[crtc_idx].crtc_id == crtc->base.id) {
+			found = true;
+			if (priv->disp_thread[crtc_idx].thread) {
+				kthread_queue_work(
+					&priv->disp_thread[crtc_idx].worker,
+					&commit->commit_work);
+				/* only return zero if work is
+				 * queued successfully.
+				 */
+				ret = 0;
+			} else {
+				DRM_ERROR(" Error for crtc_id: %d\n",
+					priv->disp_thread[crtc_idx].crtc_id);
+				ret = -EINVAL;
 			}
 		}
 		/*
@@ -600,7 +606,7 @@ static void msm_atomic_commit_dispatch(struct drm_device *dev,
 		 * Current assumption is there will be only one crtc
 		 * per commit cycle.
 		 */
-		if (j < priv->num_crtcs)
+		if (found)
 			break;
 	}
 
