@@ -90,6 +90,14 @@ typedef struct sIEDefn {
 	memcmp((lhs), (rhs), (len))
 #endif
 
+#ifndef DOT11F_NOINLINE
+#if defined(__GNUC__)
+#define DOT11F_NOINLINE __attribute__((__noinline__))
+#else
+#define DOT11F_NOINLINE
+#endif
+#endif
+
 #ifndef DOT11F_HAVE_LOG_SEVERITIES
 #define FRLOG_OFF (0)
 #define FRLOGP    (1)
@@ -422,6 +430,103 @@ static uint32_t dot11f_unpack_ie_common_func(tpAniSirGlobal pCtx, uint8_t *pBuf,
 
 	return status;
 } /* End dot11f_unpack_ie_common_func */
+
+static DOT11F_NOINLINE uint32_t
+dot11f_unpack_tlv_copy_var(tpAniSirGlobal pCtx, uint8_t *pBuf,
+			   uint16_t tlvlen, uint8_t *present,
+			   uint8_t *count, uint8_t *dst, uint16_t max_len)
+{
+	*present = 1;
+	*count = (uint8_t)tlvlen;
+	if (tlvlen > max_len) {
+		*present = 0;
+		return DOT11F_SKIPPED_BAD_IE;
+	}
+
+	DOT11F_MEMCPY(pCtx, dst, pBuf, tlvlen);
+	(void)pCtx;
+	return DOT11F_PARSE_SUCCESS;
+}
+
+static DOT11F_NOINLINE uint32_t
+dot11f_unpack_tlv_copy_fixed(tpAniSirGlobal pCtx, uint8_t *pBuf,
+			     uint16_t tlvlen, uint8_t *present,
+			     uint8_t *dst, uint8_t len)
+{
+	*present = 1;
+	if (unlikely(tlvlen < len)) {
+		*present = 0;
+		return DOT11F_INCOMPLETE_IE;
+	}
+
+	DOT11F_MEMCPY(pCtx, dst, pBuf, len);
+	(void)pCtx;
+	return DOT11F_PARSE_SUCCESS;
+}
+
+static DOT11F_NOINLINE uint32_t
+dot11f_unpack_tlv_channel(tpAniSirGlobal pCtx, uint8_t *pBuf, uint16_t tlvlen,
+			  uint8_t *present, uint8_t *country,
+			  uint8_t *reg_class, uint8_t *channel)
+{
+	*present = 1;
+	if (unlikely(tlvlen < 3)) {
+		*present = 0;
+		return DOT11F_INCOMPLETE_IE;
+	}
+
+	DOT11F_MEMCPY(pCtx, country, pBuf, 3);
+	pBuf += 3;
+	tlvlen -= 3;
+	if (unlikely(tlvlen < 1)) {
+		*present = 0;
+		return DOT11F_INCOMPLETE_IE;
+	}
+
+	*reg_class = *pBuf++;
+	tlvlen--;
+	if (unlikely(tlvlen < 1)) {
+		*present = 0;
+		return DOT11F_INCOMPLETE_IE;
+	}
+
+	*channel = *pBuf;
+	(void)pCtx;
+	return DOT11F_PARSE_SUCCESS;
+}
+
+static DOT11F_NOINLINE uint32_t
+dot11f_unpack_tlv_device_type(tpAniSirGlobal pCtx, uint8_t *pBuf,
+			      uint16_t tlvlen, uint8_t *present,
+			      uint16_t *primary_category, uint8_t *oui,
+			      uint16_t *sub_category)
+{
+	*present = 1;
+	if (unlikely(tlvlen < 2)) {
+		*present = 0;
+		return DOT11F_INCOMPLETE_IE;
+	}
+
+	framesntohs(pCtx, primary_category, pBuf, 1);
+	pBuf += 2;
+	tlvlen -= 2;
+	if (unlikely(tlvlen < 4)) {
+		*present = 0;
+		return DOT11F_INCOMPLETE_IE;
+	}
+
+	DOT11F_MEMCPY(pCtx, oui, pBuf, 4);
+	pBuf += 4;
+	tlvlen -= 4;
+	if (unlikely(tlvlen < 2)) {
+		*present = 0;
+		return DOT11F_INCOMPLETE_IE;
+	}
+
+	framesntohs(pCtx, sub_category, pBuf, 1);
+	(void)pCtx;
+	return DOT11F_PARSE_SUCCESS;
+}
 
 typedef struct sTLVDefn {
 	uint32_t   offset;
@@ -885,18 +990,8 @@ uint32_t dot11f_unpack_tlv_authorized_ma_cs(tpAniSirGlobal pCtx,
 					  uint16_t tlvlen,
 					  tDot11fTLVAuthorizedMACs *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	if (unlikely(tlvlen < 6)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->mac, pBuf, 6);
-	pBuf += 6;
-	tlvlen -= (uint8_t)6;
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_copy_fixed(pCtx, pBuf, tlvlen,
+					    &pDst->present, pDst->mac, 6);
 } /* End dot11f_unpack_tlv_authorized_ma_cs. */
 
 #define SigTlvAuthorizedMACs (0x0001)
@@ -947,19 +1042,9 @@ uint32_t dot11f_unpack_tlv_device_name(tpAniSirGlobal pCtx,
 				      uint16_t tlvlen,
 				      tDot11fTLVDeviceName *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	pDst->num_text = (uint8_t)(tlvlen);
-	if (tlvlen > 32) {
-		pDst->present = 0;
-		return DOT11F_SKIPPED_BAD_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->text, pBuf, (tlvlen));
-	pBuf += (tlvlen);
-	tlvlen -= (tlvlen);
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_copy_var(pCtx, pBuf, tlvlen,
+					  &pDst->present, &pDst->num_text,
+					  pDst->text, 32);
 } /* End dot11f_unpack_tlv_device_name. */
 
 #define SigTlvDeviceName (0x0008)
@@ -1003,34 +1088,10 @@ uint32_t dot11f_unpack_tlv_listen_channel(tpAniSirGlobal pCtx,
 					 uint16_t tlvlen,
 					 tDot11fTLVListenChannel *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	if (unlikely(tlvlen < 3)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->countryString, pBuf, 3);
-	pBuf += 3;
-	tlvlen -= (uint8_t)3;
-	if (unlikely(tlvlen < 1)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	pDst->regulatoryClass = *pBuf;
-	pBuf += 1;
-	tlvlen -= (uint8_t)1;
-	if (unlikely(tlvlen < 1)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	pDst->channel = *pBuf;
-	pBuf += 1;
-	tlvlen -= (uint8_t)1;
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_channel(pCtx, pBuf, tlvlen, &pDst->present,
+					 pDst->countryString,
+					 &pDst->regulatoryClass,
+					 &pDst->channel);
 } /* End dot11f_unpack_tlv_listen_channel. */
 
 #define SigTlvListenChannel (0x000b)
@@ -1041,19 +1102,9 @@ uint32_t dot11f_unpack_tlv_manufacturer(tpAniSirGlobal pCtx,
 					 uint16_t tlvlen,
 					 tDot11fTLVManufacturer *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	pDst->num_name = (uint8_t)(tlvlen);
-	if (tlvlen > 64) {
-		pDst->present = 0;
-		return DOT11F_SKIPPED_BAD_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->name, pBuf, (tlvlen));
-	pBuf += (tlvlen);
-	tlvlen -= (tlvlen);
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_copy_var(pCtx, pBuf, tlvlen,
+					  &pDst->present, &pDst->num_name,
+					  pDst->name, 64);
 } /* End dot11f_unpack_tlv_manufacturer. */
 
 #define SigTlvManufacturer (0x000c)
@@ -1067,19 +1118,9 @@ uint32_t dot11f_unpack_tlv_model_name(tpAniSirGlobal pCtx,
 				     uint16_t tlvlen,
 				     tDot11fTLVModelName *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	pDst->num_text = (uint8_t)(tlvlen);
-	if (tlvlen > 32) {
-		pDst->present = 0;
-		return DOT11F_SKIPPED_BAD_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->text, pBuf, (tlvlen));
-	pBuf += (tlvlen);
-	tlvlen -= (tlvlen);
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_copy_var(pCtx, pBuf, tlvlen,
+					  &pDst->present, &pDst->num_text,
+					  pDst->text, 32);
 } /* End dot11f_unpack_tlv_model_name. */
 
 #define SigTlvModelName (0x000e)
@@ -1090,19 +1131,9 @@ uint32_t dot11f_unpack_tlv_model_number(tpAniSirGlobal pCtx,
 				       uint16_t tlvlen,
 				       tDot11fTLVModelNumber *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	pDst->num_text = (uint8_t)(tlvlen);
-	if (tlvlen > 32) {
-		pDst->present = 0;
-		return DOT11F_SKIPPED_BAD_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->text, pBuf, (tlvlen));
-	pBuf += (tlvlen);
-	tlvlen -= (tlvlen);
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_copy_var(pCtx, pBuf, tlvlen,
+					  &pDst->present, &pDst->num_text,
+					  pDst->text, 32);
 } /* End dot11f_unpack_tlv_model_number. */
 
 #define SigTlvModelNumber (0x000f)
@@ -1152,34 +1183,10 @@ uint32_t dot11f_unpack_tlv_operating_channel(tpAniSirGlobal pCtx,
 					    uint16_t tlvlen,
 					    tDot11fTLVOperatingChannel *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	if (unlikely(tlvlen < 3)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->countryString, pBuf, 3);
-	pBuf += 3;
-	tlvlen -= (uint8_t)3;
-	if (unlikely(tlvlen < 1)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	pDst->regulatoryClass = *pBuf;
-	pBuf += 1;
-	tlvlen -= (uint8_t)1;
-	if (unlikely(tlvlen < 1)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	pDst->channel = *pBuf;
-	pBuf += 1;
-	tlvlen -= (uint8_t)1;
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_channel(pCtx, pBuf, tlvlen, &pDst->present,
+					 pDst->countryString,
+					 &pDst->regulatoryClass,
+					 &pDst->channel);
 } /* End dot11f_unpack_tlv_operating_channel. */
 
 #define SigTlvOperatingChannel (0x0011)
@@ -1220,18 +1227,9 @@ uint32_t dot11f_unpack_tlv_p2_p_device_id(tpAniSirGlobal pCtx,
 				       uint16_t tlvlen,
 				       tDot11fTLVP2PDeviceId *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	if (unlikely(tlvlen < 6)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->P2PDeviceAddress, pBuf, 6);
-	pBuf += 6;
-	tlvlen -= (uint8_t)6;
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_copy_fixed(pCtx, pBuf, tlvlen,
+					    &pDst->present,
+					    pDst->P2PDeviceAddress, 6);
 } /* End dot11f_unpack_tlv_p2_p_device_id. */
 
 #define SigTlvP2PDeviceId (0x0013)
@@ -1314,35 +1312,10 @@ uint32_t dot11f_unpack_tlv_primary_device_type(tpAniSirGlobal pCtx,
 					     uint16_t tlvlen,
 					     tDot11fTLVPrimaryDeviceType *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	(void)pBuf; (void)tlvlen; /* Shutup the compiler */
-	pDst->present = 1;
-	if (unlikely(tlvlen < 2)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	framesntohs(pCtx, &pDst->primary_category, pBuf, 1);
-	pBuf += 2;
-	tlvlen -= (uint8_t)2;
-	if (unlikely(tlvlen < 4)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->oui, pBuf, 4);
-	pBuf += 4;
-	tlvlen -= (uint8_t)4;
-	if (unlikely(tlvlen < 2)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	framesntohs(pCtx, &pDst->sub_category, pBuf, 1);
-	pBuf += 2;
-	tlvlen -= (uint8_t)2;
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_device_type(pCtx, pBuf, tlvlen,
+					     &pDst->present,
+					     &pDst->primary_category,
+					     pDst->oui, &pDst->sub_category);
 } /* End dot11f_unpack_tlv_primary_device_type. */
 
 #define SigTlvPrimaryDeviceType (0x0017)
@@ -1356,34 +1329,10 @@ uint32_t dot11f_unpack_tlv_request_device_type(tpAniSirGlobal pCtx,
 					     uint16_t tlvlen,
 					     tDot11fTLVRequestDeviceType *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	if (unlikely(tlvlen < 2)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	framesntohs(pCtx, &pDst->primary_category, pBuf, 1);
-	pBuf += 2;
-	tlvlen -= (uint8_t)2;
-	if (unlikely(tlvlen < 4)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->oui, pBuf, 4);
-	pBuf += 4;
-	tlvlen -= (uint8_t)4;
-	if (unlikely(tlvlen < 2)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	framesntohs(pCtx, &pDst->sub_category, pBuf, 1);
-	pBuf += 2;
-	tlvlen -= (uint8_t)2;
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_device_type(pCtx, pBuf, tlvlen,
+					     &pDst->present,
+					     &pDst->primary_category,
+					     pDst->oui, &pDst->sub_category);
 } /* End dot11f_unpack_tlv_request_device_type. */
 
 #define SigTlvRequestDeviceType (0x0019)
@@ -1406,19 +1355,9 @@ uint32_t dot11f_unpack_tlv_serial_number(tpAniSirGlobal pCtx,
 					 uint16_t tlvlen,
 					 tDot11fTLVSerialNumber *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	pDst->num_text = (uint8_t)(tlvlen);
-	if (tlvlen > 32) {
-		pDst->present = 0;
-		return DOT11F_SKIPPED_BAD_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->text, pBuf, (tlvlen));
-	pBuf += (tlvlen);
-	tlvlen -= (tlvlen);
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_copy_var(pCtx, pBuf, tlvlen,
+					  &pDst->present, &pDst->num_text,
+					  pDst->text, 32);
 } /* End dot11f_unpack_tlv_serial_number. */
 
 #define SigTlvSerialNumber (0x001e)
@@ -1429,18 +1368,8 @@ uint32_t dot11f_unpack_tlv_uuid_e(tpAniSirGlobal pCtx,
 				  uint16_t tlvlen,
 				  tDot11fTLVUUID_E *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	if (unlikely(tlvlen < 16)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->uuid, pBuf, 16);
-	pBuf += 16;
-	tlvlen -= (uint8_t)16;
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_copy_fixed(pCtx, pBuf, tlvlen,
+					    &pDst->present, pDst->uuid, 16);
 } /* End dot11f_unpack_tlv_uuid_e. */
 
 #define SigTlvUUID_E (0x001f)
@@ -1451,18 +1380,8 @@ uint32_t dot11f_unpack_tlv_uuid_r(tpAniSirGlobal pCtx,
 				  uint16_t tlvlen,
 				  tDot11fTLVUUID_R *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	if (unlikely(tlvlen < 16)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->uuid, pBuf, 16);
-	pBuf += 16;
-	tlvlen -= (uint8_t)16;
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_copy_fixed(pCtx, pBuf, tlvlen,
+					    &pDst->present, pDst->uuid, 16);
 } /* End dot11f_unpack_tlv_uuid_r. */
 
 #define SigTlvUUID_R (0x0020)
@@ -1558,27 +1477,18 @@ uint32_t dot11f_unpack_tlv_non_prefferd_chan_rep(tpAniSirGlobal pCtx,
 						 uint16_t tlvlen,
 						 tDot11fTLVnon_prefferd_chan_rep *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
 	pDst->present = 1;
 	if (unlikely(tlvlen < 1)) {
 		pDst->present = 0;
 		return DOT11F_INCOMPLETE_IE;
 	}
 
-	pDst->oper_class = *pBuf;
-	pBuf += 1;
-	tlvlen -= (uint8_t)1;
-	pDst->num_channel_report = (uint8_t)(tlvlen);
-	if (tlvlen > 254) {
-		pDst->present = 0;
-		return DOT11F_SKIPPED_BAD_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->channel_report, pBuf, (tlvlen));
-	pBuf += (tlvlen);
-	tlvlen -= (tlvlen);
-	(void)pCtx;
-	return status;
+	pDst->oper_class = *pBuf++;
+	tlvlen--;
+	return dot11f_unpack_tlv_copy_var(pCtx, pBuf, tlvlen,
+					  &pDst->present,
+					  &pDst->num_channel_report,
+					  pDst->channel_report, 254);
 } /* End dot11f_unpack_tlv_non_prefferd_chan_rep. */
 
 #define SigTlvnon_prefferd_chan_rep (0x0029)
@@ -1677,18 +1587,9 @@ uint32_t dot11f_unpack_tlv_p2_p_interface(tpAniSirGlobal pCtx,
 					 uint16_t tlvlen,
 					 tDot11fTLVP2PInterface *pDst)
 {
-	uint32_t status = DOT11F_PARSE_SUCCESS;
-	pDst->present = 1;
-	if (unlikely(tlvlen < 6)) {
-		pDst->present = 0;
-		return DOT11F_INCOMPLETE_IE;
-	}
-
-	DOT11F_MEMCPY(pCtx, pDst->P2PDeviceAddress, pBuf, 6);
-	pBuf += 6;
-	tlvlen -= (uint8_t)6;
-	(void)pCtx;
-	return status;
+	return dot11f_unpack_tlv_copy_fixed(pCtx, pBuf, tlvlen,
+					    &pDst->present,
+					    pDst->P2PDeviceAddress, 6);
 } /* End dot11f_unpack_tlv_p2_p_interface. */
 
 #define SigTlvP2PInterface (0x002f)
