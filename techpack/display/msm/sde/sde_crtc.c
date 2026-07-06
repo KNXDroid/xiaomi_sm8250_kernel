@@ -135,6 +135,7 @@ static void sde_crtc_calc_fps(struct sde_crtc *sde_crtc)
 {
 	ktime_t current_time_us;
 	u64 fps, diff_us;
+	u32 next_time_index;
 
 	current_time_us = ktime_get();
 	diff_us = (u64)ktime_us_delta(current_time_us,
@@ -165,9 +166,12 @@ static void sde_crtc_calc_fps(struct sde_crtc *sde_crtc)
 	 * counter loops around and comes back to the first index to store
 	 * the next ktime.
 	 */
-	sde_crtc->fps_info.time_buf[sde_crtc->fps_info.next_time_index++] =
-								ktime_get();
-	sde_crtc->fps_info.next_time_index %= MAX_FRAME_COUNT;
+	next_time_index = sde_crtc->fps_info.next_time_index;
+	sde_crtc->fps_info.time_buf[next_time_index] = current_time_us;
+	next_time_index++;
+	if (next_time_index >= MAX_FRAME_COUNT)
+		next_time_index = 0;
+	sde_crtc->fps_info.next_time_index = next_time_index;
 }
 
 static void _sde_crtc_deinit_events(struct sde_crtc *sde_crtc)
