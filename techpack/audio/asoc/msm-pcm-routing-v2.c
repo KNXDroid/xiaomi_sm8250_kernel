@@ -22949,9 +22949,9 @@ static int msm_routing_put_module_cfg_control(struct snd_kcontrol *kcontrol,
 	if (!packed_params)
 		return -ENOMEM;
 
-	memset(&param_hdr, 0, sizeof(param_hdr));
 	param_hdr.module_id = module_id;
 	param_hdr.instance_id = instance_id;
+	param_hdr.reserved = 0;
 	param_hdr.param_id = param_id;
 	param_hdr.param_size = sizeof(uint32_t);
 
@@ -23176,13 +23176,13 @@ int msm_routing_get_rms_value_control(struct snd_kcontrol *kcontrol,
 	if (!param_value)
 		return -ENOMEM;
 
-	memset(&param_hdr, 0, sizeof(param_hdr));
 	for (be_idx = 0; be_idx < MSM_BACKEND_DAI_MAX; be_idx++)
 		if (msm_bedais[be_idx].port_id == SLIMBUS_0_TX)
 			break;
 	if ((be_idx < MSM_BACKEND_DAI_MAX) && msm_bedais[be_idx].active) {
 		param_hdr.module_id = RMS_MODULEID_APPI_PASSTHRU;
 		param_hdr.instance_id = INSTANCE_ID_0;
+		param_hdr.reserved = 0;
 		param_hdr.param_id = RMS_PARAM_FIRST_SAMPLE;
 		param_hdr.param_size = param_size;
 		rc = adm_get_pp_params(SLIMBUS_0_TX, 0, ADM_CLIENT_ID_DEFAULT,
