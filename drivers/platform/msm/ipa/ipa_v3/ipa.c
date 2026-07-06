@@ -6382,7 +6382,7 @@ static ssize_t ipa3_write(struct file *file, const char __user *buf,
 {
 	unsigned long missing;
 
-	char dbg_buff[32] = { 0 };
+	char dbg_buff[32];
 	int i = 0;
 
 	if (count >= sizeof(dbg_buff))
@@ -6395,8 +6395,7 @@ static ssize_t ipa3_write(struct file *file, const char __user *buf,
 		return -EFAULT;
 	}
 
-	if (count > 0)
-		dbg_buff[count] = '\0';
+	dbg_buff[count] = '\0';
 
 	IPADBG("user input string %s\n", dbg_buff);
 
