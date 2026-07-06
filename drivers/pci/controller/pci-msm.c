@@ -5338,11 +5338,26 @@ static int msm_pcie_setup_drv(struct msm_pcie_dev_t *pcie_dev,
 	return 0;
 }
 
+static void msm_pcie_init_device_state(struct msm_pcie_dev_t *pcie_dev)
+{
+	int i;
+
+	memset32(pcie_dev->rc_shadow, PCIE_CLEAR,
+		 ARRAY_SIZE(pcie_dev->rc_shadow));
+	memset32(&pcie_dev->ep_shadow[0][0], PCIE_CLEAR,
+		 MAX_DEVICE_NUM * PCIE_CONF_SPACE_DW);
+	memset(pcie_dev->pcidev_table, 0, sizeof(pcie_dev->pcidev_table));
+
+	for (i = 0; i < MAX_DEVICE_NUM; i++) {
+		pcie_dev->pcidev_table[i].domain = pcie_dev->rc_idx;
+		pcie_dev->pcidev_table[i].registered = true;
+	}
+}
+
 static int msm_pcie_probe(struct platform_device *pdev)
 {
 	int ret = 0;
 	int rc_idx = -1;
-	int i, j;
 	struct msm_pcie_dev_t *pcie_dev;
 	struct device_node *of_node;
 	bool drv_supported;
@@ -5546,23 +5561,7 @@ static int msm_pcie_probe(struct platform_device *pdev)
 	memcpy(pcie_dev->linkdown_reset, msm_pcie_linkdown_reset_info[rc_idx],
 		sizeof(msm_pcie_linkdown_reset_info[rc_idx]));
 
-	for (i = 0; i < PCIE_CONF_SPACE_DW; i++)
-		pcie_dev->rc_shadow[i] = PCIE_CLEAR;
-	for (i = 0; i < MAX_DEVICE_NUM; i++)
-		for (j = 0; j < PCIE_CONF_SPACE_DW; j++)
-			pcie_dev->ep_shadow[i][j] = PCIE_CLEAR;
-	for (i = 0; i < MAX_DEVICE_NUM; i++) {
-		pcie_dev->pcidev_table[i].bdf = 0;
-		pcie_dev->pcidev_table[i].dev = NULL;
-		pcie_dev->pcidev_table[i].short_bdf = 0;
-		pcie_dev->pcidev_table[i].sid = 0;
-		pcie_dev->pcidev_table[i].domain = rc_idx;
-		pcie_dev->pcidev_table[i].conf_base = NULL;
-		pcie_dev->pcidev_table[i].phy_address = 0;
-		pcie_dev->pcidev_table[i].dev_ctrlstts_offset = 0;
-		pcie_dev->pcidev_table[i].event_reg = NULL;
-		pcie_dev->pcidev_table[i].registered = true;
-	}
+	msm_pcie_init_device_state(pcie_dev);
 
 	dev_set_drvdata(&pdev->dev, pcie_dev);
 
