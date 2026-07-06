@@ -2635,406 +2635,104 @@ exit:
 	return acdb_id;
 }
 
-static int msm_routing_get_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
+static noinline int msm_routing_switch_mixer_get(
+				struct snd_ctl_elem_value *ucontrol,
+				int enabled, const char *name, const char *func)
 {
-	ucontrol->value.integer.value[0] = fm_switch_enable;
-	pr_debug("%s: FM Switch enable %ld\n", __func__,
+	ucontrol->value.integer.value[0] = enabled;
+	pr_debug("%s: %s Switch enable %ld\n", func, name,
 		ucontrol->value.integer.value[0]);
 	return 0;
 }
 
-static int msm_routing_put_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
+static noinline int msm_routing_switch_mixer_put(struct snd_kcontrol *kcontrol,
+				struct snd_ctl_elem_value *ucontrol,
+				int *enabled, const char *name, const char *func)
 {
 	struct snd_soc_dapm_widget *widget =
 		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
+	long value = ucontrol->value.integer.value[0];
 
-	pr_debug("%s: FM Switch enable %ld\n", __func__,
-			ucontrol->value.integer.value[0]);
-	if (ucontrol->value.integer.value[0])
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 1,
-						update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 0,
-						update);
-	fm_switch_enable = ucontrol->value.integer.value[0];
+	pr_debug("%s: %s Switch enable %ld\n", func, name, value);
+	snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, !!value, NULL);
+	*enabled = value;
 	return 1;
 }
 
-static int msm_routing_get_hfp_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = hfp_switch_enable;
-	pr_debug("%s: HFP Switch enable %ld\n", __func__,
-		ucontrol->value.integer.value[0]);
-	return 0;
+#define MSM_ROUTING_SWITCH_GET(fn, var, name)				\
+static int fn(struct snd_kcontrol *kcontrol,				\
+				struct snd_ctl_elem_value *ucontrol)	\
+{									\
+	return msm_routing_switch_mixer_get(ucontrol, var, name, __func__); \
 }
 
-static int msm_routing_put_hfp_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: HFP Switch enable %ld\n", __func__,
-			ucontrol->value.integer.value[0]);
-	if (ucontrol->value.integer.value[0])
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol,
-						1, update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol,
-						0, update);
-	hfp_switch_enable = ucontrol->value.integer.value[0];
-	return 1;
+#define MSM_ROUTING_SWITCH_PUT(fn, var, name)				\
+static int fn(struct snd_kcontrol *kcontrol,				\
+				struct snd_ctl_elem_value *ucontrol)	\
+{									\
+	return msm_routing_switch_mixer_put(kcontrol, ucontrol,		\
+				&var, name, __func__);			\
 }
 
-static int msm_routing_a2dp_switch_mixer_get(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = a2dp_switch_enable;
-	pr_debug("%s: A2DP Switch enable %ld\n", __func__,
-		  ucontrol->value.integer.value[0]);
-	return 0;
-}
-
-static int msm_routing_a2dp_switch_mixer_put(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: A2DP Switch enable %ld\n", __func__,
-		  ucontrol->value.integer.value[0]);
-	a2dp_switch_enable = ucontrol->value.integer.value[0];
-	if (a2dp_switch_enable)
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol,
-						1, update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol,
-						0, update);
-	return 1;
-}
-
-static int msm_routing_sco_switch_mixer_get(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = sco_switch_enable;
-	pr_debug("%s: SCO Switch enable %ld\n", __func__,
-		  ucontrol->value.integer.value[0]);
-	return 0;
-}
-
-static int msm_routing_sco_switch_mixer_put(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: SCO Switch enable %ld\n", __func__,
-		  ucontrol->value.integer.value[0]);
-	sco_switch_enable = ucontrol->value.integer.value[0];
-	if (sco_switch_enable)
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol,
-						1, update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol,
-						0, update);
-	return 1;
-}
+MSM_ROUTING_SWITCH_GET(msm_routing_get_switch_mixer,
+		       fm_switch_enable, "FM")
+MSM_ROUTING_SWITCH_PUT(msm_routing_put_switch_mixer,
+		       fm_switch_enable, "FM")
+MSM_ROUTING_SWITCH_GET(msm_routing_get_hfp_switch_mixer,
+		       hfp_switch_enable, "HFP")
+MSM_ROUTING_SWITCH_PUT(msm_routing_put_hfp_switch_mixer,
+		       hfp_switch_enable, "HFP")
+MSM_ROUTING_SWITCH_GET(msm_routing_a2dp_switch_mixer_get,
+		       a2dp_switch_enable, "A2DP")
+MSM_ROUTING_SWITCH_PUT(msm_routing_a2dp_switch_mixer_put,
+		       a2dp_switch_enable, "A2DP")
+MSM_ROUTING_SWITCH_GET(msm_routing_sco_switch_mixer_get,
+		       sco_switch_enable, "SCO")
+MSM_ROUTING_SWITCH_PUT(msm_routing_sco_switch_mixer_put,
+		       sco_switch_enable, "SCO")
 #ifndef CONFIG_MI2S_DISABLE
-static int msm_routing_get_int0_mi2s_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = int0_mi2s_switch_enable;
-	pr_debug("%s: INT0 MI2S Switch enable %ld\n", __func__,
-		ucontrol->value.integer.value[0]);
-	return 0;
-}
-
-static int msm_routing_put_int0_mi2s_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: INT0 MI2S Switch enable %ld\n", __func__,
-			ucontrol->value.integer.value[0]);
-	if (ucontrol->value.integer.value[0])
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 1,
-						update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 0,
-						update);
-	int0_mi2s_switch_enable = ucontrol->value.integer.value[0];
-	return 1;
-}
-
-static int msm_routing_get_int4_mi2s_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = int4_mi2s_switch_enable;
-	pr_debug("%s: INT4 MI2S Switch enable %ld\n", __func__,
-		ucontrol->value.integer.value[0]);
-	return 0;
-}
-
-static int msm_routing_put_int4_mi2s_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: INT4 MI2S Switch enable %ld\n", __func__,
-			ucontrol->value.integer.value[0]);
-	if (ucontrol->value.integer.value[0])
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 1,
-						update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 0,
-						update);
-	int4_mi2s_switch_enable = ucontrol->value.integer.value[0];
-	return 1;
-}
-
-static int msm_routing_get_pri_mi2s_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = pri_mi2s_switch_enable;
-	pr_debug("%s: PRI MI2S Switch enable %ld\n", __func__,
-		ucontrol->value.integer.value[0]);
-	return 0;
-}
-
-static int msm_routing_put_pri_mi2s_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: PRI MI2S Switch enable %ld\n", __func__,
-			ucontrol->value.integer.value[0]);
-	if (ucontrol->value.integer.value[0])
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 1,
-						update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 0,
-						update);
-	pri_mi2s_switch_enable = ucontrol->value.integer.value[0];
-	return 1;
-}
-
-static int msm_routing_get_sec_mi2s_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = sec_mi2s_switch_enable;
-	pr_debug("%s: SEC MI2S Switch enable %ld\n", __func__,
-		ucontrol->value.integer.value[0]);
-	return 0;
-}
-
-static int msm_routing_put_sec_mi2s_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: SEC MI2S Switch enable %ld\n", __func__,
-			ucontrol->value.integer.value[0]);
-	if (ucontrol->value.integer.value[0])
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 1,
-						update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 0,
-						update);
-	sec_mi2s_switch_enable = ucontrol->value.integer.value[0];
-	return 1;
-}
-
-static int msm_routing_get_tert_mi2s_switch_mixer(
-				struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = tert_mi2s_switch_enable;
-	pr_debug("%s: TERT MI2S Switch enable %ld\n", __func__,
-		ucontrol->value.integer.value[0]);
-	return 0;
-}
-
-static int msm_routing_put_tert_mi2s_switch_mixer(
-				struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: TERT MI2S Switch enable %ld\n", __func__,
-			ucontrol->value.integer.value[0]);
-	if (ucontrol->value.integer.value[0])
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 1,
-						update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 0,
-						update);
-	tert_mi2s_switch_enable = ucontrol->value.integer.value[0];
-	return 1;
-}
-
-static int msm_routing_get_quat_mi2s_switch_mixer(
-				struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = quat_mi2s_switch_enable;
-	pr_debug("%s: QUAT MI2S Switch enable %ld\n", __func__,
-		ucontrol->value.integer.value[0]);
-	return 0;
-}
-
-static int msm_routing_put_quat_mi2s_switch_mixer(
-				struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: QUAT MI2S Switch enable %ld\n", __func__,
-			ucontrol->value.integer.value[0]);
-	if (ucontrol->value.integer.value[0])
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 1,
-						update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 0,
-						update);
-	quat_mi2s_switch_enable = ucontrol->value.integer.value[0];
-	return 1;
-}
-
-static int msm_routing_get_quin_mi2s_switch_mixer(
-				struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = quin_mi2s_switch_enable;
-	pr_debug("%s: QUIN MI2S Switch enable %ld\n", __func__,
-		ucontrol->value.integer.value[0]);
-	return 0;
-}
-
-static int msm_routing_put_quin_mi2s_switch_mixer(
-				struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: QUIN MI2S Switch enable %ld\n", __func__,
-			ucontrol->value.integer.value[0]);
-	if (ucontrol->value.integer.value[0])
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 1,
-						update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 0,
-						update);
-	quin_mi2s_switch_enable = ucontrol->value.integer.value[0];
-	return 1;
-}
-
-static int msm_routing_get_sen_mi2s_switch_mixer(
-				struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = sen_mi2s_switch_enable;
-	pr_debug("%s: SEN MI2S Switch enable %ld\n", __func__,
-		ucontrol->value.integer.value[0]);
-	return 0;
-}
-
-static int msm_routing_put_sen_mi2s_switch_mixer(
-				struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: SEN MI2S Switch enable %ld\n", __func__,
-			ucontrol->value.integer.value[0]);
-	if (ucontrol->value.integer.value[0])
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 1,
-						update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 0,
-						update);
-	sen_mi2s_switch_enable = ucontrol->value.integer.value[0];
-	return 1;
-}
+MSM_ROUTING_SWITCH_GET(msm_routing_get_int0_mi2s_switch_mixer,
+		       int0_mi2s_switch_enable, "INT0 MI2S")
+MSM_ROUTING_SWITCH_PUT(msm_routing_put_int0_mi2s_switch_mixer,
+		       int0_mi2s_switch_enable, "INT0 MI2S")
+MSM_ROUTING_SWITCH_GET(msm_routing_get_int4_mi2s_switch_mixer,
+		       int4_mi2s_switch_enable, "INT4 MI2S")
+MSM_ROUTING_SWITCH_PUT(msm_routing_put_int4_mi2s_switch_mixer,
+		       int4_mi2s_switch_enable, "INT4 MI2S")
+MSM_ROUTING_SWITCH_GET(msm_routing_get_pri_mi2s_switch_mixer,
+		       pri_mi2s_switch_enable, "PRI MI2S")
+MSM_ROUTING_SWITCH_PUT(msm_routing_put_pri_mi2s_switch_mixer,
+		       pri_mi2s_switch_enable, "PRI MI2S")
+MSM_ROUTING_SWITCH_GET(msm_routing_get_sec_mi2s_switch_mixer,
+		       sec_mi2s_switch_enable, "SEC MI2S")
+MSM_ROUTING_SWITCH_PUT(msm_routing_put_sec_mi2s_switch_mixer,
+		       sec_mi2s_switch_enable, "SEC MI2S")
+MSM_ROUTING_SWITCH_GET(msm_routing_get_tert_mi2s_switch_mixer,
+		       tert_mi2s_switch_enable, "TERT MI2S")
+MSM_ROUTING_SWITCH_PUT(msm_routing_put_tert_mi2s_switch_mixer,
+		       tert_mi2s_switch_enable, "TERT MI2S")
+MSM_ROUTING_SWITCH_GET(msm_routing_get_quat_mi2s_switch_mixer,
+		       quat_mi2s_switch_enable, "QUAT MI2S")
+MSM_ROUTING_SWITCH_PUT(msm_routing_put_quat_mi2s_switch_mixer,
+		       quat_mi2s_switch_enable, "QUAT MI2S")
+MSM_ROUTING_SWITCH_GET(msm_routing_get_quin_mi2s_switch_mixer,
+		       quin_mi2s_switch_enable, "QUIN MI2S")
+MSM_ROUTING_SWITCH_PUT(msm_routing_put_quin_mi2s_switch_mixer,
+		       quin_mi2s_switch_enable, "QUIN MI2S")
+MSM_ROUTING_SWITCH_GET(msm_routing_get_sen_mi2s_switch_mixer,
+		       sen_mi2s_switch_enable, "SEN MI2S")
+MSM_ROUTING_SWITCH_PUT(msm_routing_put_sen_mi2s_switch_mixer,
+		       sen_mi2s_switch_enable, "SEN MI2S")
 #endif
 
-static int msm_routing_get_usb_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = usb_switch_enable;
-	pr_debug("%s: HFP Switch enable %ld\n", __func__,
-		ucontrol->value.integer.value[0]);
-	return 0;
-}
-
-static int msm_routing_put_usb_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: USB Switch enable %ld\n", __func__,
-			ucontrol->value.integer.value[0]);
-	if (ucontrol->value.integer.value[0])
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol,
-						1, update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol,
-						0, update);
-	usb_switch_enable = ucontrol->value.integer.value[0];
-	return 1;
-}
-
-static int msm_routing_get_fm_pcmrx_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = fm_pcmrx_switch_enable;
-	pr_debug("%s: FM Switch enable %ld\n", __func__,
-		ucontrol->value.integer.value[0]);
-	return 0;
-}
-
-static int msm_routing_put_fm_pcmrx_switch_mixer(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_dapm_widget *widget =
-		snd_soc_dapm_kcontrol_widget(kcontrol);
-	struct snd_soc_dapm_update *update = NULL;
-
-	pr_debug("%s: FM Switch enable %ld\n", __func__,
-			ucontrol->value.integer.value[0]);
-	if (ucontrol->value.integer.value[0])
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 1,
-						update);
-	else
-		snd_soc_dapm_mixer_update_power(widget->dapm, kcontrol, 0,
-						update);
-	fm_pcmrx_switch_enable = ucontrol->value.integer.value[0];
-	return 1;
-}
+MSM_ROUTING_SWITCH_GET(msm_routing_get_usb_switch_mixer,
+		       usb_switch_enable, "USB")
+MSM_ROUTING_SWITCH_PUT(msm_routing_put_usb_switch_mixer,
+		       usb_switch_enable, "USB")
+MSM_ROUTING_SWITCH_GET(msm_routing_get_fm_pcmrx_switch_mixer,
+		       fm_pcmrx_switch_enable, "FM")
+MSM_ROUTING_SWITCH_PUT(msm_routing_put_fm_pcmrx_switch_mixer,
+		       fm_pcmrx_switch_enable, "FM")
 
 static void msm_routing_get_lsm_fe_idx(struct snd_kcontrol *kcontrol,
 						u8 *fe_idx)
