@@ -203,31 +203,28 @@ int ipa3_active_clients_log_print_table(char *buf, int size)
 	cnt = scnprintf(buf, size, "\n---- Active Clients Table ----\n");
 	hash_for_each(ipa3_ctx->ipa3_active_clients_logging.htable, i,
 			iterator, list) {
+		const char *type;
+
 		switch (iterator->type) {
 		case IPA3_ACTIVE_CLIENT_LOG_TYPE_EP:
-			cnt += scnprintf(buf + cnt, size - cnt,
-					"%-40s %-3d ENDPOINT\n",
-					iterator->id_string, iterator->count);
+			type = "ENDPOINT";
 			break;
 		case IPA3_ACTIVE_CLIENT_LOG_TYPE_SIMPLE:
-			cnt += scnprintf(buf + cnt, size - cnt,
-					"%-40s %-3d SIMPLE\n",
-					iterator->id_string, iterator->count);
+			type = "SIMPLE";
 			break;
 		case IPA3_ACTIVE_CLIENT_LOG_TYPE_RESOURCE:
-			cnt += scnprintf(buf + cnt, size - cnt,
-					"%-40s %-3d RESOURCE\n",
-					iterator->id_string, iterator->count);
+			type = "RESOURCE";
 			break;
 		case IPA3_ACTIVE_CLIENT_LOG_TYPE_SPECIAL:
-			cnt += scnprintf(buf + cnt, size - cnt,
-					"%-40s %-3d SPECIAL\n",
-					iterator->id_string, iterator->count);
+			type = "SPECIAL";
 			break;
 		default:
 			IPAERR("Trying to print illegal active_clients type");
-			break;
+			continue;
 		}
+
+		cnt += scnprintf(buf + cnt, size - cnt, "%-40s %-3d %s\n",
+				iterator->id_string, iterator->count, type);
 	}
 	cnt += scnprintf(buf + cnt, size - cnt,
 			"\nTotal active clients count: %d\n",
