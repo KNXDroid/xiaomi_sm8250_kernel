@@ -154,15 +154,11 @@ static int compat_get_qseecom_qseos_app_load_query(
 		struct qseecom_qseos_app_load_query __user *data)
 {
 	int err = 0;
-	unsigned int i;
 	compat_uint_t app_id;
-	char app_name;
 	compat_ulong_t app_arch;
 
-	for (i = 0; i < MAX_APP_NAME_SIZE; i++) {
-		err |= get_user(app_name, &(data32->app_name[i]));
-		err |= put_user(app_name, &(data->app_name[i]));
-	}
+	err = copy_in_user(data->app_name, data32->app_name,
+			   MAX_APP_NAME_SIZE);
 	err |= get_user(app_id, &data32->app_id);
 	err |= put_user(app_id, &data->app_id);
 	err |= get_user(app_arch, &data32->app_arch);
@@ -438,15 +434,11 @@ static int compat_put_qseecom_qseos_app_load_query(
 		struct qseecom_qseos_app_load_query __user *data)
 {
 	int err = 0;
-	unsigned int i;
 	compat_int_t app_id;
 	compat_ulong_t app_arch;
-	char app_name;
 
-	for (i = 0; i < MAX_APP_NAME_SIZE; i++) {
-		err |= get_user(app_name, &(data->app_name[i]));
-		err |= put_user(app_name, &(data32->app_name[i]));
-	}
+	err = copy_in_user(data32->app_name, data->app_name,
+			   MAX_APP_NAME_SIZE);
 	err |= get_user(app_id, &data->app_id);
 	err |= put_user(app_id, &data32->app_id);
 	err |= get_user(app_arch, &data->app_arch);
