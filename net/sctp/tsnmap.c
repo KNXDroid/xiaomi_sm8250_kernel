@@ -83,10 +83,12 @@ void sctp_tsnmap_free(struct sctp_tsnmap *map)
  */
 int sctp_tsnmap_check(const struct sctp_tsnmap *map, __u32 tsn)
 {
+	__u32 ctsn;
 	u32 gap;
 
 	/* Check to see if this is an old TSN */
-	if (TSN_lte(tsn, map->cumulative_tsn_ack_point))
+	ctsn = map->cumulative_tsn_ack_point;
+	if (TSN_lte(tsn, ctsn))
 		return 1;
 
 	/* Verify that we can hold this TSN and that it will not
@@ -168,11 +170,13 @@ static int sctp_tsnmap_next_gap_ack(const struct sctp_tsnmap *map,
 				    struct sctp_tsnmap_iter *iter,
 				    __u16 *start, __u16 *end)
 {
+	__u32 max_tsn_seen;
 	int ended = 0;
 	__u16 start_ = 0, end_ = 0, offset;
 
 	/* If there are no more gap acks possible, get out fast.  */
-	if (TSN_lte(map->max_tsn_seen, iter->start))
+	max_tsn_seen = map->max_tsn_seen;
+	if (TSN_lte(max_tsn_seen, iter->start))
 		return 0;
 
 	offset = iter->start - map->base_tsn;

@@ -1330,9 +1330,10 @@ static unsigned int ipv4_default_advmss(const struct dst_entry *dst)
 static unsigned int ipv4_mtu(const struct dst_entry *dst)
 {
 	const struct rtable *rt = (const struct rtable *) dst;
+	unsigned long expires = rt->dst.expires;
 	unsigned int mtu = rt->rt_pmtu;
 
-	if (!mtu || time_after_eq(jiffies, rt->dst.expires))
+	if (!mtu || time_after_eq(jiffies, expires))
 		mtu = dst_metric_raw(dst, RTAX_MTU);
 
 	if (mtu)
