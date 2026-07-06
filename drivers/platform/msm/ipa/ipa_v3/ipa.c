@@ -1670,7 +1670,7 @@ static int ipa3_ioctl_fnr_counter_set(unsigned long arg)
 static int proc_sram_info_rqst(
 	unsigned long arg)
 {
-	struct ipa_nat_in_sram_info sram_info = { 0 };
+	struct ipa_nat_in_sram_info sram_info;
 
 	if (ipa3_nat_get_sram_info(&sram_info))
 		return  -EFAULT;
