@@ -55,6 +55,166 @@ static const unsigned char hid_keyboard[256] = {
 	150,158,159,128,136,177,178,176,142,152,173,140,unk,unk,unk,unk
 };
 
+static const unsigned short hid_consumer_keymap[] = {
+	[0x030] = KEY_POWER,
+	[0x031] = KEY_RESTART,
+	[0x032] = KEY_SLEEP,
+	[0x034] = KEY_SLEEP,
+	[0x035] = KEY_KBDILLUMTOGGLE,
+	[0x036] = BTN_MISC,
+	[0x040] = KEY_MENU,
+	[0x041] = KEY_SELECT,
+	[0x042] = KEY_UP,
+	[0x043] = KEY_DOWN,
+	[0x044] = KEY_LEFT,
+	[0x045] = KEY_RIGHT,
+	[0x046] = KEY_ESC,
+	[0x047] = KEY_KPPLUS,
+	[0x048] = KEY_KPMINUS,
+	[0x060] = KEY_INFO,
+	[0x061] = KEY_SUBTITLE,
+	[0x063] = KEY_VCR,
+	[0x065] = KEY_CAMERA,
+	[0x069] = KEY_RED,
+	[0x06a] = KEY_GREEN,
+	[0x06b] = KEY_BLUE,
+	[0x06c] = KEY_YELLOW,
+	[0x06d] = KEY_ZOOM,
+	[0x06f] = KEY_BRIGHTNESSUP,
+	[0x070] = KEY_BRIGHTNESSDOWN,
+	[0x072] = KEY_BRIGHTNESS_TOGGLE,
+	[0x073] = KEY_BRIGHTNESS_MIN,
+	[0x074] = KEY_BRIGHTNESS_MAX,
+	[0x075] = KEY_BRIGHTNESS_AUTO,
+	[0x079] = KEY_KBDILLUMUP,
+	[0x07a] = KEY_KBDILLUMDOWN,
+	[0x07c] = KEY_KBDILLUMTOGGLE,
+	[0x082] = KEY_VIDEO_NEXT,
+	[0x083] = KEY_LAST,
+	[0x084] = KEY_ENTER,
+	[0x088] = KEY_PC,
+	[0x089] = KEY_TV,
+	[0x08a] = KEY_WWW,
+	[0x08b] = KEY_DVD,
+	[0x08c] = KEY_PHONE,
+	[0x08d] = KEY_PROGRAM,
+	[0x08e] = KEY_VIDEOPHONE,
+	[0x08f] = KEY_GAMES,
+	[0x090] = KEY_MEMO,
+	[0x091] = KEY_CD,
+	[0x092] = KEY_VCR,
+	[0x093] = KEY_TUNER,
+	[0x094] = KEY_EXIT,
+	[0x095] = KEY_HELP,
+	[0x096] = KEY_TAPE,
+	[0x097] = KEY_TV2,
+	[0x098] = KEY_SAT,
+	[0x09a] = KEY_PVR,
+	[0x09c] = KEY_CHANNELUP,
+	[0x09d] = KEY_CHANNELDOWN,
+	[0x0a0] = KEY_VCR2,
+	[0x0b0] = KEY_PLAY,
+	[0x0b1] = KEY_PAUSE,
+	[0x0b2] = KEY_RECORD,
+	[0x0b3] = KEY_FASTFORWARD,
+	[0x0b4] = KEY_REWIND,
+	[0x0b5] = KEY_NEXTSONG,
+	[0x0b6] = KEY_PREVIOUSSONG,
+	[0x0b7] = KEY_STOPCD,
+	[0x0b8] = KEY_EJECTCD,
+	[0x0b9] = KEY_SHUFFLE,
+	[0x0bc] = KEY_MEDIA_REPEAT,
+	[0x0bf] = KEY_SLOW,
+	[0x0cd] = KEY_PLAYPAUSE,
+	[0x0cf] = KEY_VOICECOMMAND,
+	[0x0e2] = KEY_MUTE,
+	[0x0e5] = KEY_BASSBOOST,
+	[0x0e9] = KEY_VOLUMEUP,
+	[0x0ea] = KEY_VOLUMEDOWN,
+	[0x0f5] = KEY_SLOW,
+	[0x181] = KEY_BUTTONCONFIG,
+	[0x182] = KEY_BOOKMARKS,
+	[0x183] = KEY_CONFIG,
+	[0x184] = KEY_WORDPROCESSOR,
+	[0x185] = KEY_EDITOR,
+	[0x186] = KEY_SPREADSHEET,
+	[0x187] = KEY_GRAPHICSEDITOR,
+	[0x188] = KEY_PRESENTATION,
+	[0x189] = KEY_DATABASE,
+	[0x18a] = KEY_MAIL,
+	[0x18b] = KEY_NEWS,
+	[0x18c] = KEY_VOICEMAIL,
+	[0x18d] = KEY_ADDRESSBOOK,
+	[0x18e] = KEY_CALENDAR,
+	[0x18f] = KEY_TASKMANAGER,
+	[0x190] = KEY_JOURNAL,
+	[0x191] = KEY_FINANCE,
+	[0x192] = KEY_CALC,
+	[0x193] = KEY_PLAYER,
+	[0x194] = KEY_FILE,
+	[0x196] = KEY_WWW,
+	[0x199] = KEY_CHAT,
+	[0x19c] = KEY_LOGOFF,
+	[0x19e] = KEY_COFFEE,
+	[0x19f] = KEY_CONTROLPANEL,
+	[0x1a2] = KEY_APPSELECT,
+	[0x1a3] = KEY_NEXT,
+	[0x1a4] = KEY_PREVIOUS,
+	[0x1a6] = KEY_HELP,
+	[0x1a7] = KEY_DOCUMENTS,
+	[0x1ab] = KEY_SPELLCHECK,
+	[0x1ae] = KEY_KEYBOARD,
+	[0x1b1] = KEY_SCREENSAVER,
+	[0x1b4] = KEY_FILE,
+	[0x1b6] = KEY_IMAGES,
+	[0x1b7] = KEY_AUDIO,
+	[0x1b8] = KEY_VIDEO,
+	[0x1bc] = KEY_MESSENGER,
+	[0x1bd] = KEY_INFO,
+	[0x1cb] = KEY_ASSISTANT,
+	[0x201] = KEY_NEW,
+	[0x202] = KEY_OPEN,
+	[0x203] = KEY_CLOSE,
+	[0x204] = KEY_EXIT,
+	[0x207] = KEY_SAVE,
+	[0x208] = KEY_PRINT,
+	[0x209] = KEY_PROPS,
+	[0x21a] = KEY_UNDO,
+	[0x21b] = KEY_COPY,
+	[0x21c] = KEY_CUT,
+	[0x21d] = KEY_PASTE,
+	[0x21f] = KEY_FIND,
+	[0x221] = KEY_SEARCH,
+	[0x222] = KEY_GOTO,
+	[0x223] = KEY_HOMEPAGE,
+	[0x224] = KEY_BACK,
+	[0x225] = KEY_FORWARD,
+	[0x226] = KEY_STOP,
+	[0x227] = KEY_REFRESH,
+	[0x22a] = KEY_BOOKMARKS,
+	[0x22d] = KEY_ZOOMIN,
+	[0x22e] = KEY_ZOOMOUT,
+	[0x22f] = KEY_ZOOMRESET,
+	[0x233] = KEY_SCROLLUP,
+	[0x234] = KEY_SCROLLDOWN,
+	[0x23d] = KEY_EDIT,
+	[0x25f] = KEY_CANCEL,
+	[0x269] = KEY_INSERT,
+	[0x26a] = KEY_DELETE,
+	[0x279] = KEY_REDO,
+	[0x289] = KEY_REPLY,
+	[0x28b] = KEY_FORWARDMAIL,
+	[0x28c] = KEY_SEND,
+	[0x29f] = KEY_SCALE,
+	[0x2a2] = KEY_ALL_APPLICATIONS,
+	[0x2c7] = KEY_KBDINPUTASSIST_PREV,
+	[0x2c8] = KEY_KBDINPUTASSIST_NEXT,
+	[0x2c9] = KEY_KBDINPUTASSIST_PREVGROUP,
+	[0x2ca] = KEY_KBDINPUTASSIST_NEXTGROUP,
+	[0x2cb] = KEY_KBDINPUTASSIST_ACCEPT,
+	[0x2cc] = KEY_KBDINPUTASSIST_CANCEL,
+};
+
 static const struct {
 	__s32 x;
 	__s32 y;
@@ -872,185 +1032,27 @@ static void hidinput_configure_usage(struct hid_input *hidinput, struct hid_fiel
 		}
 		break;
 
-	case HID_UP_CONSUMER:	/* USB HUT v1.12, pages 75-84 */
-		switch (usage->hid & HID_USAGE) {
-		case 0x000: goto ignore;
-		case 0x030: map_key_clear(KEY_POWER);		break;
-		case 0x031: map_key_clear(KEY_RESTART);		break;
-		case 0x032: map_key_clear(KEY_SLEEP);		break;
-		case 0x034: map_key_clear(KEY_SLEEP);		break;
-		case 0x035: map_key_clear(KEY_KBDILLUMTOGGLE);	break;
-		case 0x036: map_key_clear(BTN_MISC);		break;
+	case HID_UP_CONSUMER: {	/* USB HUT v1.12, pages 75-84 */
+		unsigned int consumer = usage->hid & HID_USAGE;
 
-		case 0x040: map_key_clear(KEY_MENU);		break; /* Menu */
-		case 0x041: map_key_clear(KEY_SELECT);		break; /* Menu Pick */
-		case 0x042: map_key_clear(KEY_UP);		break; /* Menu Up */
-		case 0x043: map_key_clear(KEY_DOWN);		break; /* Menu Down */
-		case 0x044: map_key_clear(KEY_LEFT);		break; /* Menu Left */
-		case 0x045: map_key_clear(KEY_RIGHT);		break; /* Menu Right */
-		case 0x046: map_key_clear(KEY_ESC);		break; /* Menu Escape */
-		case 0x047: map_key_clear(KEY_KPPLUS);		break; /* Menu Value Increase */
-		case 0x048: map_key_clear(KEY_KPMINUS);		break; /* Menu Value Decrease */
+		if (!consumer)
+			goto ignore;
 
-		case 0x060: map_key_clear(KEY_INFO);		break; /* Data On Screen */
-		case 0x061: map_key_clear(KEY_SUBTITLE);	break; /* Closed Caption */
-		case 0x063: map_key_clear(KEY_VCR);		break; /* VCR/TV */
-		case 0x065: map_key_clear(KEY_CAMERA);		break; /* Snapshot */
-		case 0x069: map_key_clear(KEY_RED);		break;
-		case 0x06a: map_key_clear(KEY_GREEN);		break;
-		case 0x06b: map_key_clear(KEY_BLUE);		break;
-		case 0x06c: map_key_clear(KEY_YELLOW);		break;
-		case 0x06d: map_key_clear(KEY_ZOOM);		break;
-
-		case 0x06f: map_key_clear(KEY_BRIGHTNESSUP);		break;
-		case 0x070: map_key_clear(KEY_BRIGHTNESSDOWN);		break;
-		case 0x072: map_key_clear(KEY_BRIGHTNESS_TOGGLE);	break;
-		case 0x073: map_key_clear(KEY_BRIGHTNESS_MIN);		break;
-		case 0x074: map_key_clear(KEY_BRIGHTNESS_MAX);		break;
-		case 0x075: map_key_clear(KEY_BRIGHTNESS_AUTO);		break;
-
-		case 0x079: map_key_clear(KEY_KBDILLUMUP);	break;
-		case 0x07a: map_key_clear(KEY_KBDILLUMDOWN);	break;
-		case 0x07c: map_key_clear(KEY_KBDILLUMTOGGLE);	break;
-
-		case 0x082: map_key_clear(KEY_VIDEO_NEXT);	break;
-		case 0x083: map_key_clear(KEY_LAST);		break;
-		case 0x084: map_key_clear(KEY_ENTER);		break;
-		case 0x088: map_key_clear(KEY_PC);		break;
-		case 0x089: map_key_clear(KEY_TV);		break;
-		case 0x08a: map_key_clear(KEY_WWW);		break;
-		case 0x08b: map_key_clear(KEY_DVD);		break;
-		case 0x08c: map_key_clear(KEY_PHONE);		break;
-		case 0x08d: map_key_clear(KEY_PROGRAM);		break;
-		case 0x08e: map_key_clear(KEY_VIDEOPHONE);	break;
-		case 0x08f: map_key_clear(KEY_GAMES);		break;
-		case 0x090: map_key_clear(KEY_MEMO);		break;
-		case 0x091: map_key_clear(KEY_CD);		break;
-		case 0x092: map_key_clear(KEY_VCR);		break;
-		case 0x093: map_key_clear(KEY_TUNER);		break;
-		case 0x094: map_key_clear(KEY_EXIT);		break;
-		case 0x095: map_key_clear(KEY_HELP);		break;
-		case 0x096: map_key_clear(KEY_TAPE);		break;
-		case 0x097: map_key_clear(KEY_TV2);		break;
-		case 0x098: map_key_clear(KEY_SAT);		break;
-		case 0x09a: map_key_clear(KEY_PVR);		break;
-
-		case 0x09c: map_key_clear(KEY_CHANNELUP);	break;
-		case 0x09d: map_key_clear(KEY_CHANNELDOWN);	break;
-		case 0x0a0: map_key_clear(KEY_VCR2);		break;
-
-		case 0x0b0: map_key_clear(KEY_PLAY);		break;
-		case 0x0b1: map_key_clear(KEY_PAUSE);		break;
-		case 0x0b2: map_key_clear(KEY_RECORD);		break;
-		case 0x0b3: map_key_clear(KEY_FASTFORWARD);	break;
-		case 0x0b4: map_key_clear(KEY_REWIND);		break;
-		case 0x0b5: map_key_clear(KEY_NEXTSONG);	break;
-		case 0x0b6: map_key_clear(KEY_PREVIOUSSONG);	break;
-		case 0x0b7: map_key_clear(KEY_STOPCD);		break;
-		case 0x0b8: map_key_clear(KEY_EJECTCD);		break;
-		case 0x0bc: map_key_clear(KEY_MEDIA_REPEAT);	break;
-		case 0x0b9: map_key_clear(KEY_SHUFFLE);		break;
-		case 0x0bf: map_key_clear(KEY_SLOW);		break;
-
-		case 0x0cd: map_key_clear(KEY_PLAYPAUSE);	break;
-		case 0x0cf: map_key_clear(KEY_VOICECOMMAND);	break;
-		case 0x0e0: map_abs_clear(ABS_VOLUME);		break;
-		case 0x0e2: map_key_clear(KEY_MUTE);		break;
-		case 0x0e5: map_key_clear(KEY_BASSBOOST);	break;
-		case 0x0e9: map_key_clear(KEY_VOLUMEUP);	break;
-		case 0x0ea: map_key_clear(KEY_VOLUMEDOWN);	break;
-		case 0x0f5: map_key_clear(KEY_SLOW);		break;
-
-		case 0x181: map_key_clear(KEY_BUTTONCONFIG);	break;
-		case 0x182: map_key_clear(KEY_BOOKMARKS);	break;
-		case 0x183: map_key_clear(KEY_CONFIG);		break;
-		case 0x184: map_key_clear(KEY_WORDPROCESSOR);	break;
-		case 0x185: map_key_clear(KEY_EDITOR);		break;
-		case 0x186: map_key_clear(KEY_SPREADSHEET);	break;
-		case 0x187: map_key_clear(KEY_GRAPHICSEDITOR);	break;
-		case 0x188: map_key_clear(KEY_PRESENTATION);	break;
-		case 0x189: map_key_clear(KEY_DATABASE);	break;
-		case 0x18a: map_key_clear(KEY_MAIL);		break;
-		case 0x18b: map_key_clear(KEY_NEWS);		break;
-		case 0x18c: map_key_clear(KEY_VOICEMAIL);	break;
-		case 0x18d: map_key_clear(KEY_ADDRESSBOOK);	break;
-		case 0x18e: map_key_clear(KEY_CALENDAR);	break;
-		case 0x18f: map_key_clear(KEY_TASKMANAGER);	break;
-		case 0x190: map_key_clear(KEY_JOURNAL);		break;
-		case 0x191: map_key_clear(KEY_FINANCE);		break;
-		case 0x192: map_key_clear(KEY_CALC);		break;
-		case 0x193: map_key_clear(KEY_PLAYER);		break;
-		case 0x194: map_key_clear(KEY_FILE);		break;
-		case 0x196: map_key_clear(KEY_WWW);		break;
-		case 0x199: map_key_clear(KEY_CHAT);		break;
-		case 0x19c: map_key_clear(KEY_LOGOFF);		break;
-		case 0x19e: map_key_clear(KEY_COFFEE);		break;
-		case 0x19f: map_key_clear(KEY_CONTROLPANEL);		break;
-		case 0x1a2: map_key_clear(KEY_APPSELECT);		break;
-		case 0x1a3: map_key_clear(KEY_NEXT);		break;
-		case 0x1a4: map_key_clear(KEY_PREVIOUS);	break;
-		case 0x1a6: map_key_clear(KEY_HELP);		break;
-		case 0x1a7: map_key_clear(KEY_DOCUMENTS);	break;
-		case 0x1ab: map_key_clear(KEY_SPELLCHECK);	break;
-		case 0x1ae: map_key_clear(KEY_KEYBOARD);	break;
-		case 0x1b1: map_key_clear(KEY_SCREENSAVER);		break;
-		case 0x1b4: map_key_clear(KEY_FILE);		break;
-		case 0x1b6: map_key_clear(KEY_IMAGES);		break;
-		case 0x1b7: map_key_clear(KEY_AUDIO);		break;
-		case 0x1b8: map_key_clear(KEY_VIDEO);		break;
-		case 0x1bc: map_key_clear(KEY_MESSENGER);	break;
-		case 0x1bd: map_key_clear(KEY_INFO);		break;
-		case 0x1cb: map_key_clear(KEY_ASSISTANT);	break;
-		case 0x201: map_key_clear(KEY_NEW);		break;
-		case 0x202: map_key_clear(KEY_OPEN);		break;
-		case 0x203: map_key_clear(KEY_CLOSE);		break;
-		case 0x204: map_key_clear(KEY_EXIT);		break;
-		case 0x207: map_key_clear(KEY_SAVE);		break;
-		case 0x208: map_key_clear(KEY_PRINT);		break;
-		case 0x209: map_key_clear(KEY_PROPS);		break;
-		case 0x21a: map_key_clear(KEY_UNDO);		break;
-		case 0x21b: map_key_clear(KEY_COPY);		break;
-		case 0x21c: map_key_clear(KEY_CUT);		break;
-		case 0x21d: map_key_clear(KEY_PASTE);		break;
-		case 0x21f: map_key_clear(KEY_FIND);		break;
-		case 0x221: map_key_clear(KEY_SEARCH);		break;
-		case 0x222: map_key_clear(KEY_GOTO);		break;
-		case 0x223: map_key_clear(KEY_HOMEPAGE);	break;
-		case 0x224: map_key_clear(KEY_BACK);		break;
-		case 0x225: map_key_clear(KEY_FORWARD);		break;
-		case 0x226: map_key_clear(KEY_STOP);		break;
-		case 0x227: map_key_clear(KEY_REFRESH);		break;
-		case 0x22a: map_key_clear(KEY_BOOKMARKS);	break;
-		case 0x22d: map_key_clear(KEY_ZOOMIN);		break;
-		case 0x22e: map_key_clear(KEY_ZOOMOUT);		break;
-		case 0x22f: map_key_clear(KEY_ZOOMRESET);	break;
-		case 0x233: map_key_clear(KEY_SCROLLUP);	break;
-		case 0x234: map_key_clear(KEY_SCROLLDOWN);	break;
-		case 0x238: map_rel(REL_HWHEEL);		break;
-		case 0x23d: map_key_clear(KEY_EDIT);		break;
-		case 0x25f: map_key_clear(KEY_CANCEL);		break;
-		case 0x269: map_key_clear(KEY_INSERT);		break;
-		case 0x26a: map_key_clear(KEY_DELETE);		break;
-		case 0x279: map_key_clear(KEY_REDO);		break;
-
-		case 0x289: map_key_clear(KEY_REPLY);		break;
-		case 0x28b: map_key_clear(KEY_FORWARDMAIL);	break;
-		case 0x28c: map_key_clear(KEY_SEND);		break;
-
-		case 0x2a2: map_key_clear(KEY_ALL_APPLICATIONS);	break;
-
-		case 0x2c7: map_key_clear(KEY_KBDINPUTASSIST_PREV);		break;
-		case 0x2c8: map_key_clear(KEY_KBDINPUTASSIST_NEXT);		break;
-		case 0x2c9: map_key_clear(KEY_KBDINPUTASSIST_PREVGROUP);		break;
-		case 0x2ca: map_key_clear(KEY_KBDINPUTASSIST_NEXTGROUP);		break;
-		case 0x2cb: map_key_clear(KEY_KBDINPUTASSIST_ACCEPT);	break;
-		case 0x2cc: map_key_clear(KEY_KBDINPUTASSIST_CANCEL);	break;
-
-		case 0x29f: map_key_clear(KEY_SCALE);		break;
-
-		default: map_key_clear(KEY_UNKNOWN);
+		switch (consumer) {
+		case 0x0e0:
+			map_abs_clear(ABS_VOLUME);
+			break;
+		case 0x238:
+			map_rel(REL_HWHEEL);
+			break;
+		default:
+			code = consumer < ARRAY_SIZE(hid_consumer_keymap) &&
+				hid_consumer_keymap[consumer] ?
+				hid_consumer_keymap[consumer] : KEY_UNKNOWN;
+			map_key_clear(code);
 		}
 		break;
+	}
 
 	case HID_UP_GENDEVCTRLS:
 		switch (usage->hid) {
@@ -1870,4 +1872,3 @@ void hidinput_disconnect(struct hid_device *hid)
 	cancel_work_sync(&hid->led_work);
 }
 EXPORT_SYMBOL_GPL(hidinput_disconnect);
-
