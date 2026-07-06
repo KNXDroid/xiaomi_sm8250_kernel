@@ -154,6 +154,7 @@ static void _sde_core_perf_calc_crtc(struct sde_kms *kms,
 		struct sde_core_perf_params *perf)
 {
 	struct sde_crtc_state *sde_cstate;
+	u64 core_ab, core_ib;
 	int i;
 
 	if (!kms || !kms->catalog || !crtc || !state || !perf) {
@@ -164,10 +165,11 @@ static void _sde_core_perf_calc_crtc(struct sde_kms *kms,
 	sde_cstate = to_sde_crtc_state(state);
 	memset(perf, 0, sizeof(struct sde_core_perf_params));
 
-	perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_MNOC] =
-		sde_crtc_get_property(sde_cstate, CRTC_PROP_CORE_AB);
-	perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_MNOC] =
-		sde_crtc_get_property(sde_cstate, CRTC_PROP_CORE_IB);
+	core_ab = sde_crtc_get_property(sde_cstate, CRTC_PROP_CORE_AB);
+	core_ib = sde_crtc_get_property(sde_cstate, CRTC_PROP_CORE_IB);
+
+	perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_MNOC] = core_ab;
+	perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_MNOC] = core_ib;
 
 	if (sde_cstate->bw_split_vote) {
 		perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_LLCC] =
@@ -179,14 +181,10 @@ static void _sde_core_perf_calc_crtc(struct sde_kms *kms,
 		perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_EBI] =
 			sde_crtc_get_property(sde_cstate, CRTC_PROP_DRAM_IB);
 	} else {
-		perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_LLCC] =
-			sde_crtc_get_property(sde_cstate, CRTC_PROP_CORE_AB);
-		perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_LLCC] =
-			sde_crtc_get_property(sde_cstate, CRTC_PROP_CORE_IB);
-		perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_EBI] =
-			sde_crtc_get_property(sde_cstate, CRTC_PROP_CORE_AB);
-		perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_EBI] =
-			sde_crtc_get_property(sde_cstate, CRTC_PROP_CORE_IB);
+		perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_LLCC] = core_ab;
+		perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_LLCC] = core_ib;
+		perf->bw_ctl[SDE_POWER_HANDLE_DBUS_ID_EBI] = core_ab;
+		perf->max_per_pipe_ib[SDE_POWER_HANDLE_DBUS_ID_EBI] = core_ib;
 	}
 
 	perf->core_clk_rate =
@@ -289,6 +287,8 @@ int sde_core_perf_crtc_check(struct drm_crtc *crtc,
 	}
 
 	sde_cstate = to_sde_crtc_state(state);
+	curr_client_type = sde_crtc_get_client_type(crtc);
+	threshold = kms->catalog->perf.max_bw_high;
 
 	/* obtain new values */
 	_sde_core_perf_calc_crtc(kms, crtc, state, &sde_cstate->new_perf);
@@ -296,35 +296,34 @@ int sde_core_perf_crtc_check(struct drm_crtc *crtc,
 	for (i = SDE_POWER_HANDLE_DBUS_ID_MNOC;
 			i < SDE_POWER_HANDLE_DBUS_ID_MAX; i++) {
 		bw_sum_of_intfs = sde_cstate->new_perf.bw_ctl[i];
-		curr_client_type = sde_crtc_get_client_type(crtc);
 
 		drm_for_each_crtc(tmp_crtc, crtc->dev) {
-			if (_sde_core_perf_crtc_is_power_on(tmp_crtc) &&
-			    (sde_crtc_get_client_type(tmp_crtc) ==
-					    curr_client_type) &&
-			    (tmp_crtc != crtc)) {
-				struct sde_crtc_state *tmp_cstate =
-					to_sde_crtc_state(tmp_crtc->state);
+			struct sde_crtc_state *tmp_cstate;
 
-				SDE_DEBUG("crtc:%d bw:%llu ctrl:%d\n",
-					tmp_crtc->base.id,
-					tmp_cstate->new_perf.bw_ctl[i],
-					tmp_cstate->bw_control);
-				/*
-				 * For bw check only use the bw if the
-				 * atomic property has been already set
-				 */
-				if (tmp_cstate->bw_control)
-					bw_sum_of_intfs +=
-						tmp_cstate->new_perf.bw_ctl[i];
-			}
+			if (tmp_crtc == crtc)
+				continue;
+			if (!_sde_core_perf_crtc_is_power_on(tmp_crtc))
+				continue;
+			if (sde_crtc_get_client_type(tmp_crtc) !=
+					curr_client_type)
+				continue;
+
+			tmp_cstate = to_sde_crtc_state(tmp_crtc->state);
+			SDE_DEBUG("crtc:%d bw:%llu ctrl:%d\n",
+				tmp_crtc->base.id,
+				tmp_cstate->new_perf.bw_ctl[i],
+				tmp_cstate->bw_control);
+			/*
+			 * For bw check only use the bw if the
+			 * atomic property has been already set
+			 */
+			if (tmp_cstate->bw_control)
+				bw_sum_of_intfs += tmp_cstate->new_perf.bw_ctl[i];
 		}
 
 		/* convert bandwidth to kb */
 		bw = DIV_ROUND_UP_ULL(bw_sum_of_intfs, 1000);
 		SDE_DEBUG("calculated bandwidth=%uk\n", bw);
-
-		threshold = kms->catalog->perf.max_bw_high;
 
 		SDE_DEBUG("final threshold bw limit = %d\n", threshold);
 
