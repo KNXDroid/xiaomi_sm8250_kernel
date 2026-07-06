@@ -92,21 +92,6 @@ static int cam_icp_dump_io_cfg(struct cam_icp_hw_ctx_data *ctx_data,
 	return rc;
 }
 
-static const char *cam_icp_dev_type_to_name(
-	uint32_t dev_type)
-{
-	switch (dev_type) {
-	case CAM_ICP_RES_TYPE_BPS:
-		return "BPS";
-	case CAM_ICP_RES_TYPE_IPE_RT:
-		return "IPE_RT";
-	case CAM_ICP_RES_TYPE_IPE:
-		return "IPE";
-	default:
-		return "Invalid dev type";
-	}
-}
-
 static int cam_icp_send_ubwc_cfg(struct cam_icp_hw_mgr *hw_mgr)
 {
 	struct cam_hw_intf *a5_dev_intf = NULL;
@@ -2036,70 +2021,6 @@ static int cam_icp_mgr_cleanup_ctx(struct cam_icp_hw_ctx_data *ctx_data)
 	}
 
 	return 0;
-}
-
-static const char *cam_icp_error_handle_id_to_type(
-	uint32_t error_handle)
-{
-	const char *name = NULL;
-
-	switch (error_handle) {
-	case CAMERAICP_SUCCESS:
-		name = "SUCCESS";
-		break;
-	case CAMERAICP_EFAILED:
-		name = "EFAILED";
-		break;
-	case CAMERAICP_ENOMEMORY:
-		name = "ENOMEMORY";
-		break;
-	case CAMERAICP_EBADSTATE:
-		name = "EBADSTATE";
-		break;
-	case CAMERAICP_EBADPARM:
-		name = "EBADPARM";
-		break;
-	case CAMERAICP_EBADITEM:
-		name = "EBADITEM";
-		break;
-	case CAMERAICP_EINVALIDFORMAT:
-		name = "EINVALIDFORMAT";
-		break;
-	case CAMERAICP_EUNSUPPORTED:
-		name = "EUNSUPPORTED";
-		break;
-	case CAMERAICP_EOUTOFBOUND:
-		name = "EOUTOFBOUND";
-		break;
-	case CAMERAICP_ETIMEDOUT:
-		name = "ETIMEDOUT";
-		break;
-	case CAMERAICP_EABORTED:
-		name = "EABORTED";
-		break;
-	case CAMERAICP_EHWVIOLATION:
-		name = "EHWVIOLATION";
-		break;
-	case CAMERAICP_ECDMERROR:
-		name = "ECDMERROR";
-		break;
-	case CAMERAICP_HFI_ERR_COMMAND_SIZE:
-		name = "HFI_ERR_COMMAND_SIZE";
-		break;
-	case CAMERAICP_HFI_ERR_MESSAGE_SIZE:
-		name = "HFI_ERR_MESSAGE_SIZE";
-		break;
-	case CAMERAICP_HFI_QUEUE_EMPTY:
-		name = "HFI_QUEUE_EMPTY";
-		break;
-	case CAMERAICP_HFI_QUEUE_FULL:
-		name = "HFI_QUEUE_FULL";
-		break;
-	default:
-		name = NULL;
-		break;
-	}
-	return name;
 }
 
 static int cam_icp_mgr_handle_frame_process(uint32_t *msg_ptr, int flag)
@@ -5151,19 +5072,6 @@ static int cam_icp_mgr_flush_req(struct cam_icp_hw_ctx_data *ctx_data,
 static void cam_icp_mgr_flush_info_dump(
 	struct cam_hw_flush_args *flush_args, uint32_t ctx_id)
 {
-	int i;
-
-	for (i = 0; i < flush_args->num_req_active; i++) {
-		CAM_DBG(CAM_ICP, "Flushing active request %lld in ctx %u",
-			*(int64_t *)flush_args->flush_req_active[i],
-			ctx_id);
-	}
-
-	for (i = 0; i < flush_args->num_req_pending; i++) {
-		CAM_DBG(CAM_ICP, "Flushing pending request %lld in ctx %u",
-			*(int64_t *)flush_args->flush_req_pending[i],
-			ctx_id);
-	}
 }
 
 static int cam_icp_mgr_enqueue_abort(

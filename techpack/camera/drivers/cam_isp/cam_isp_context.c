@@ -201,93 +201,9 @@ static void __cam_isp_ctx_update_state_monitor_array(
 		jiffies_to_msecs(jiffies) - ctx_isp->init_timestamp;
 }
 
-static const char *__cam_isp_ctx_substate_val_to_type(
-	enum cam_isp_ctx_activated_substate type)
-{
-	switch (type) {
-	case CAM_ISP_CTX_ACTIVATED_SOF:
-		return "SOF";
-	case CAM_ISP_CTX_ACTIVATED_APPLIED:
-		return "APPLIED";
-	case CAM_ISP_CTX_ACTIVATED_EPOCH:
-		return "EPOCH";
-	case CAM_ISP_CTX_ACTIVATED_BUBBLE:
-		return "BUBBLE";
-	case CAM_ISP_CTX_ACTIVATED_BUBBLE_APPLIED:
-		return "BUBBLE_APPLIED";
-	case CAM_ISP_CTX_ACTIVATED_HW_ERROR:
-		return "HW_ERROR";
-	case CAM_ISP_CTX_ACTIVATED_HALT:
-		return "HALT";
-	default:
-		return "INVALID";
-	}
-}
-
-static const char *__cam_isp_hw_evt_val_to_type(
-	uint32_t evt_id)
-{
-	switch (evt_id) {
-	case CAM_ISP_STATE_CHANGE_TRIGGER_ERROR:
-		return "ERROR";
-	case CAM_ISP_STATE_CHANGE_TRIGGER_APPLIED:
-		return "APPLIED";
-	case CAM_ISP_STATE_CHANGE_TRIGGER_SOF:
-		return "SOF";
-	case CAM_ISP_STATE_CHANGE_TRIGGER_REG_UPDATE:
-		return "REG_UPDATE";
-	case CAM_ISP_STATE_CHANGE_TRIGGER_EPOCH:
-		return "EPOCH";
-	case CAM_ISP_STATE_CHANGE_TRIGGER_EOF:
-		return "EOF";
-	case CAM_ISP_STATE_CHANGE_TRIGGER_DONE:
-		return "DONE";
-	case CAM_ISP_STATE_CHANGE_TRIGGER_FLUSH:
-		return "FLUSH";
-	default:
-		return "CAM_ISP_EVENT_INVALID";
-	}
-}
-
 static void __cam_isp_ctx_dump_state_monitor_array(
 	struct cam_isp_context *ctx_isp)
 {
-	int i = 0;
-	int64_t state_head = 0;
-	uint32_t index, num_entries, oldest_entry;
-
-	state_head = atomic64_read(&ctx_isp->state_monitor_head);
-
-	if (state_head == -1) {
-		return;
-	} else if (state_head < CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES) {
-		num_entries = state_head;
-		oldest_entry = 0;
-	} else {
-		num_entries = CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES;
-		div_u64_rem(state_head + 1,
-			CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES, &oldest_entry);
-	}
-
-	CAM_ERR(CAM_ISP,
-		"Dumping state information for preceding requests");
-
-	index = oldest_entry;
-
-	for (i = 0; i < num_entries; i++) {
-		CAM_ERR(CAM_ISP,
-		"Index[%d] time[%d] : Substate[%s] Frame[%lld] ReqId[%llu] evt_type[%s]",
-		index,
-		ctx_isp->cam_isp_ctx_state_monitor[index].evt_time_stamp,
-		__cam_isp_ctx_substate_val_to_type(
-		ctx_isp->cam_isp_ctx_state_monitor[index].curr_state),
-		ctx_isp->cam_isp_ctx_state_monitor[index].frame_id,
-		ctx_isp->cam_isp_ctx_state_monitor[index].req_id,
-		__cam_isp_hw_evt_val_to_type(
-		ctx_isp->cam_isp_ctx_state_monitor[index].trigger));
-
-		index = (index + 1) % CAM_ISP_CTX_STATE_MONITOR_MAX_ENTRIES;
-	}
 }
 
 static int cam_isp_context_info_dump(void *context,
@@ -955,46 +871,17 @@ static int __cam_isp_handle_deferred_buf_done(
 	int rc = 0;
 	struct cam_isp_ctx_req *req_isp =
 		(struct cam_isp_ctx_req *) req->req_priv;
-	struct cam_context *ctx = ctx_isp->base;
-
-	CAM_DBG(CAM_ISP,
-		"ctx[%d] : Req %llu : Handling %d deferred buf_dones acked=%d, bubble_handling=%d",
-		ctx->ctx_id, req->request_id, req_isp->num_deferred_acks,
-		req_isp->num_acked, bubble_handling);
 
 	for (i = 0; i < req_isp->num_deferred_acks; i++) {
 		j = req_isp->deferred_fence_map_index[i];
 
-		CAM_DBG(CAM_ISP,
-			"ctx[%d] : Sync with status=%d, req %lld res 0x%x sync_id 0x%x",
-			ctx->ctx_id, status,
-			req->request_id,
-			req_isp->fence_map_out[j].resource_handle,
-			req_isp->fence_map_out[j].sync_id);
-
-		if (req_isp->fence_map_out[j].sync_id == -1) {
-			CAM_WARN(CAM_ISP,
-				"ctx[%d] Deferred done already signaled, req=%llu, j=%d, res=0x%x",
-				ctx->ctx_id, req->request_id, j,
-				req_isp->fence_map_out[j].resource_handle);
+		if (req_isp->fence_map_out[j].sync_id == -1)
 			continue;
-		}
 
 		if (!bubble_handling) {
-			CAM_WARN(CAM_ISP,
-				"ctx[%d] : Req %llu, status=%d res=0x%x should never happen",
-				ctx->ctx_id, req->request_id, status,
-				req_isp->fence_map_out[j].resource_handle);
-
 			rc = cam_sync_signal(req_isp->fence_map_out[j].sync_id,
 				status);
-			if (rc) {
-				CAM_ERR(CAM_ISP,
-					"ctx[%d] Sync failed Req %llu, sync_id %d status %d rc %d",
-					ctx->ctx_id, req->request_id,
-					req_isp->fence_map_out[j].sync_id,
-					status, rc);
-			} else {
+			if (!rc) {
 				req_isp->num_acked++;
 				req_isp->fence_map_out[j].sync_id = -1;
 			}
@@ -1002,11 +889,6 @@ static int __cam_isp_handle_deferred_buf_done(
 			req_isp->num_acked++;
 		}
 	}
-
-	CAM_DBG(CAM_ISP,
-		"ctx[%d] : Req %llu : Handled %d deferred buf_dones num_acked=%d, map_out=%d",
-		ctx->ctx_id, req->request_id, req_isp->num_deferred_acks,
-		req_isp->num_acked, req_isp->num_fence_map_out);
 
 	req_isp->num_deferred_acks = 0;
 
@@ -1018,7 +900,6 @@ static int __cam_isp_ctx_handle_deferred_buf_done_in_bubble(
 	struct cam_ctx_request  *req)
 {
 	int                     rc = 0;
-	struct cam_context     *ctx = ctx_isp->base;
 	struct cam_isp_ctx_req *req_isp;
 
 	req_isp = (struct cam_isp_ctx_req *)req->req_priv;
@@ -1030,10 +911,6 @@ static int __cam_isp_ctx_handle_deferred_buf_done_in_bubble(
 
 	if (req_isp->num_acked > req_isp->num_fence_map_out) {
 		/* Should not happen */
-		CAM_ERR(CAM_ISP,
-			"WARNING:req_id %lld num_acked %d > map_out %d, ctx %u",
-			req->request_id, req_isp->num_acked,
-			req_isp->num_fence_map_out, ctx->ctx_id);
 		WARN_ON(req_isp->num_acked > req_isp->num_fence_map_out);
 	}
 
@@ -3081,22 +2958,9 @@ static int __cam_isp_ctx_apply_req_in_sof(
 	struct cam_context *ctx, struct cam_req_mgr_apply_request *apply)
 {
 	int rc = 0;
-	struct cam_isp_context *ctx_isp =
-		(struct cam_isp_context *) ctx->ctx_priv;
 
-	CAM_DBG(CAM_ISP, "current Substate[%s]",
-		__cam_isp_ctx_substate_val_to_type(
-		ctx_isp->substate_activated));
 	rc = __cam_isp_ctx_apply_req_in_activated_state(ctx, apply,
 		CAM_ISP_CTX_ACTIVATED_APPLIED);
-	CAM_DBG(CAM_ISP, "new Substate[%s]",
-		__cam_isp_ctx_substate_val_to_type(
-		ctx_isp->substate_activated));
-
-	if (rc)
-		CAM_DBG(CAM_ISP, "Apply failed in Substate[%s], rc %d",
-			__cam_isp_ctx_substate_val_to_type(
-			ctx_isp->substate_activated), rc);
 
 	return rc;
 }
@@ -3105,22 +2969,9 @@ static int __cam_isp_ctx_apply_req_in_epoch(
 	struct cam_context *ctx, struct cam_req_mgr_apply_request *apply)
 {
 	int rc = 0;
-	struct cam_isp_context *ctx_isp =
-		(struct cam_isp_context *) ctx->ctx_priv;
 
-	CAM_DBG(CAM_ISP, "current Substate[%s]",
-		__cam_isp_ctx_substate_val_to_type(
-		ctx_isp->substate_activated));
 	rc = __cam_isp_ctx_apply_req_in_activated_state(ctx, apply,
 		CAM_ISP_CTX_ACTIVATED_APPLIED);
-	CAM_DBG(CAM_ISP, "new Substate[%s]",
-		__cam_isp_ctx_substate_val_to_type(
-		ctx_isp->substate_activated));
-
-	if (rc)
-		CAM_DBG(CAM_ISP, "Apply failed in Substate[%s], rc %d",
-			__cam_isp_ctx_substate_val_to_type(
-			ctx_isp->substate_activated), rc);
 
 	return rc;
 }
@@ -3129,22 +2980,9 @@ static int __cam_isp_ctx_apply_req_in_bubble(
 	struct cam_context *ctx, struct cam_req_mgr_apply_request *apply)
 {
 	int rc = 0;
-	struct cam_isp_context *ctx_isp =
-		(struct cam_isp_context *) ctx->ctx_priv;
 
-	CAM_DBG(CAM_ISP, "current Substate[%s]",
-		__cam_isp_ctx_substate_val_to_type(
-		ctx_isp->substate_activated));
 	rc = __cam_isp_ctx_apply_req_in_activated_state(ctx, apply,
 		CAM_ISP_CTX_ACTIVATED_BUBBLE_APPLIED);
-	CAM_DBG(CAM_ISP, "new Substate[%s]",
-		__cam_isp_ctx_substate_val_to_type(
-		ctx_isp->substate_activated));
-
-	if (rc)
-		CAM_DBG(CAM_ISP, "Apply failed in Substate[%s], rc %d",
-			__cam_isp_ctx_substate_val_to_type(
-			ctx_isp->substate_activated), rc);
 
 	return rc;
 }
@@ -4208,22 +4046,9 @@ static int __cam_isp_ctx_rdi_only_apply_req_top_state(
 	struct cam_context *ctx, struct cam_req_mgr_apply_request *apply)
 {
 	int rc = 0;
-	struct cam_isp_context *ctx_isp =
-		(struct cam_isp_context *) ctx->ctx_priv;
 
-	CAM_DBG(CAM_ISP, "current Substate[%s]",
-		__cam_isp_ctx_substate_val_to_type(
-		ctx_isp->substate_activated));
 	rc = __cam_isp_ctx_apply_req_in_activated_state(ctx, apply,
 		CAM_ISP_CTX_ACTIVATED_APPLIED);
-	CAM_DBG(CAM_ISP, "new Substate[%s]",
-		__cam_isp_ctx_substate_val_to_type(
-		ctx_isp->substate_activated));
-
-	if (rc)
-		CAM_ERR(CAM_ISP, "Apply failed in Substate[%s], rc %d",
-			__cam_isp_ctx_substate_val_to_type(
-			ctx_isp->substate_activated), rc);
 
 	return rc;
 }

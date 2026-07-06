@@ -617,20 +617,6 @@ static int cam_vfe_camif_sof_irq_debug(
 int cam_vfe_camif_dump_timestamps(
 	struct cam_isp_resource_node *rsrc_node, void *cmd_args)
 {
-	struct cam_vfe_mux_camif_data *camif_priv =
-		(struct cam_vfe_mux_camif_data *)rsrc_node->res_priv;
-
-	CAM_INFO(CAM_ISP,
-		"CAMIF ERROR time %lld:%lld SOF %lld:%lld EPOCH %lld:%lld EOF %lld:%lld",
-		camif_priv->error_ts.tv_sec,
-		camif_priv->error_ts.tv_usec,
-		camif_priv->sof_ts.tv_sec,
-		camif_priv->sof_ts.tv_usec,
-		camif_priv->epoch_ts.tv_sec,
-		camif_priv->epoch_ts.tv_usec,
-		camif_priv->eof_ts.tv_sec,
-		camif_priv->eof_ts.tv_usec);
-
 	return 0;
 }
 

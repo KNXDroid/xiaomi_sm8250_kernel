@@ -2746,31 +2746,6 @@ end:
 	return rc;
 }
 
-/**
- * __cam_req_mgr_dev_handle_to_name()
- *
- * @brief    : Finds device name based on the device handle
- * @dev_hdl  : Device handle whose name is to be found
- * @link     : Link on which the device is connected
- * @return   : String containing the device name
- *
- */
-static const char *__cam_req_mgr_dev_handle_to_name(
-	int32_t dev_hdl, struct cam_req_mgr_core_link *link)
-{
-	struct cam_req_mgr_connected_device *dev = NULL;
-	int i = 0;
-
-	for (i = 0; i < link->num_devs; i++) {
-		dev = &link->l_dev[i];
-
-		if (dev_hdl == dev->dev_hdl)
-			return dev->dev_info.name;
-	}
-
-	return "Invalid dev_hdl";
-}
-
 /* Linked devices' Callback section */
 
 /**

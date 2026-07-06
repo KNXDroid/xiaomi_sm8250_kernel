@@ -441,18 +441,12 @@ static int cam_fd_packet_generic_blob_handler(void *user_data,
 		break;
 	}
 	case CAM_FD_BLOB_TYPE_SOC_CLOCK_BW_REQUEST: {
-		struct cam_fd_soc_clock_bw_request *clk_req =
-			(struct cam_fd_soc_clock_bw_request *)blob_data;
-
 		if (sizeof(struct cam_fd_soc_clock_bw_request) != blob_size) {
 			CAM_ERR(CAM_FD, "Invalid blob size %zu %u",
 				sizeof(struct cam_fd_soc_clock_bw_request),
 				blob_size);
 			return -EINVAL;
 		}
-
-		CAM_DBG(CAM_FD, "SOC Clk Request clock=%lld, bw=%lld",
-			clk_req->clock_rate, clk_req->bandwidth);
 
 		break;
 	}
