@@ -3388,6 +3388,7 @@ static int smblib_therm_charging(struct smb_charger *chg)
 	int thermal_icl_ua = 0;
 	int thermal_fcc_ua = 0;
 	int rc;
+	int fallback_ua;
 
 #ifdef CONFIG_D8G_SERVICE
 	if (skip_thermal || bypass_charging)
@@ -3438,14 +3439,26 @@ static int smblib_therm_charging(struct smb_charger *chg)
 				chg->thermal_mitigation_pd_base[chg->system_temp_level];
 		}
 		break;
+	case POWER_SUPPLY_TYPE_USB_FLOAT:
 	case POWER_SUPPLY_TYPE_USB_DCP:
+		thermal_icl_ua = chg->thermal_mitigation_dcp[chg->system_temp_level];
+		thermal_fcc_ua = chg->thermal_mitigation[chg->system_temp_level];
+
+		if (chg->dcp_icl_ua > DCP_CURRENT_UA) {
+			fallback_ua =
+				chg->thermal_fcc_qc3_cp[chg->system_temp_level];
+			thermal_icl_ua = max(thermal_icl_ua, fallback_ua);
+			thermal_fcc_ua = max(thermal_fcc_ua, fallback_ua);
+		}
+		break;
 	default:
 		thermal_icl_ua = chg->thermal_mitigation_dcp[chg->system_temp_level];
 		thermal_fcc_ua = chg->thermal_mitigation[chg->system_temp_level];
 		break;
 	}
 
-	pr_info("###thermal_icl_ua is %d, chg->system_temp_level: %d, thermal_fcc_ua is %d, charger type = %d\n",
+	smblib_dbg(chg, PR_OEM,
+				"thermal_icl_ua is %d, chg->system_temp_level: %d, thermal_fcc_ua is %d, charger type = %d\n",
 				thermal_icl_ua, chg->system_temp_level, thermal_fcc_ua, chg->real_charger_type);
 	if (chg->system_temp_level == 0) {
 		/* if therm_lvl_sel is 0, clear thermal voter */
@@ -3458,7 +3471,8 @@ static int smblib_therm_charging(struct smb_charger *chg)
 			pr_err("Couldn't disable USB thermal ICL vote rc=%d\n",
 				rc);
 	} else {
-		pr_info("thermal_icl_ua is %d, chg->system_temp_level: %d, thermal_fcc_ua is %d, charger type = %d\n",
+		smblib_dbg(chg, PR_OEM,
+				"thermal_icl_ua is %d, chg->system_temp_level: %d, thermal_fcc_ua is %d, charger type = %d\n",
 				thermal_icl_ua, chg->system_temp_level, thermal_fcc_ua, chg->real_charger_type);
 		if (thermal_icl_ua > 0) {
 			rc = vote(chg->usb_icl_votable, THERMAL_DAEMON_VOTER, true,
@@ -9083,7 +9097,7 @@ static void update_sw_icl_max(struct smb_charger *chg, int pst)
 		break;
 	case POWER_SUPPLY_TYPE_USB_DCP:
 		vote(chg->usb_icl_votable, SW_ICL_MAX_VOTER, true,
-                    DCP_CURRENT_UA);
+				chg->dcp_icl_ua > 0 ? chg->dcp_icl_ua : DCP_CURRENT_UA);
 		break;
 	case POWER_SUPPLY_TYPE_USB_FLOAT:
 		/*
@@ -9099,7 +9113,8 @@ static void update_sw_icl_max(struct smb_charger *chg, int pst)
 					SDP_100_MA);
 		else
 			vote(chg->usb_icl_votable, SW_ICL_MAX_VOTER, true,
-					FLOAT_CHARGER_UA);
+					chg->dcp_icl_ua > 0 ?
+					chg->dcp_icl_ua : FLOAT_CHARGER_UA);
 
 		break;
 	case POWER_SUPPLY_TYPE_UNKNOWN:
