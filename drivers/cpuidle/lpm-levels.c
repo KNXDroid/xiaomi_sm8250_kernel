@@ -431,7 +431,7 @@ unlock_and_return:
 static int psci_enter_sleep(struct lpm_cpu *cpu, int idx, bool from_idle)
 {
 	int affinity_level = 0, state_id = 0, power_state = 0;
-	int ret, success;
+	int ret;
 	/*
 	 * idx = 0 is the default LPM state
 	 */
@@ -453,7 +453,6 @@ static int psci_enter_sleep(struct lpm_cpu *cpu, int idx, bool from_idle)
 	state_id += power_state + affinity_level + cpu->levels[idx].psci_id;
 
 	ret = !arm_cpuidle_suspend(state_id);
-	success = (ret == 0);
 
 	if (from_idle && cpu->levels[idx].use_bc_timer)
 		tick_broadcast_exit();
@@ -461,16 +460,76 @@ static int psci_enter_sleep(struct lpm_cpu *cpu, int idx, bool from_idle)
 	return ret;
 }
 
+static int lpm_enter_state(struct cpuidle_device *dev,
+		struct cpuidle_driver *drv, int idx, bool from_idle)
+{
+	struct lpm_cpu *cpu = per_cpu(cpu_lpm, dev->cpu);
+	const struct cpumask *cpumask = get_cpu_mask(dev->cpu);
+	bool success;
+	int ret;
+
+	if (!cpu || idx <= 0)
+		goto do_wfi;
+
+	if (idx >= drv->state_count ||
+	    !lpm_cpu_mode_allow(dev->cpu, idx, from_idle))
+		goto do_wfi;
+
+	cpu_prepare(cpu, idx, from_idle);
+	cluster_prepare(cpu->parent, cpumask, idx, from_idle, 0);
+
+	ret = psci_enter_sleep(cpu, idx, from_idle);
+	success = (ret == 0);
+
+	cluster_unprepare(cpu->parent, cpumask, idx, from_idle, 0, success);
+	cpu_unprepare(cpu, idx, from_idle);
+
+	if (!ret)
+		return idx;
+
+do_wfi:
+	cpu_do_idle();
+	return 0;
+}
+
 static int lpm_cpuidle_select(struct cpuidle_driver *drv,
 		struct cpuidle_device *dev, bool *stop_tick)
 {
-#ifdef CONFIG_NO_HZ_COMMON
+	struct lpm_cpu *cpu = per_cpu(cpu_lpm, dev->cpu);
 	ktime_t delta_next;
 	s64 duration_ns = tick_nohz_get_sleep_length(&delta_next);
+	int latency_req = cpuidle_governor_latency_req(dev->cpu);
+	u64 sleep_us = 0;
+	int i;
+
+	if (unlikely(latency_req == 0)) {
+		*stop_tick = false;
+		return 0;
+	}
 
 	if (duration_ns <= TICK_NSEC)
 		*stop_tick = false;
-#endif
+
+	if (unlikely(!cpu))
+		return 0;
+
+	if (duration_ns > 0)
+		sleep_us = DIV_ROUND_UP_ULL(duration_ns, NSEC_PER_USEC);
+
+	for (i = drv->state_count - 1; i > 0; i--) {
+		struct cpuidle_state *state = &drv->states[i];
+		struct lpm_cpu_level *level = &cpu->levels[i];
+
+		if (state->disabled || dev->states_usage[i].disable)
+			continue;
+		if (!lpm_cpu_mode_allow(dev->cpu, i, true))
+			continue;
+		if (state->exit_latency > latency_req)
+			continue;
+		if (sleep_us < level->pwr.min_residency)
+			continue;
+		return i;
+	}
 
 	return 0;
 }
@@ -478,8 +537,7 @@ static int lpm_cpuidle_select(struct cpuidle_driver *drv,
 static int lpm_cpuidle_enter(struct cpuidle_device *dev,
 		struct cpuidle_driver *drv, int idx)
 {
-	wfi();
-	return idx;
+	return lpm_enter_state(dev, drv, idx, true);
 }
 
 static void lpm_cpuidle_s2idle(struct cpuidle_device *dev,
