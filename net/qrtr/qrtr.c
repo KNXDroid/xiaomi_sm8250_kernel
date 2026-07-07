@@ -657,11 +657,11 @@ static void qrtr_node_assign(struct qrtr_node *node, unsigned int nid)
 	if (!node->ilc) {
 		node->ilc = ipc_log_context_create(QRTR_LOG_PAGE_CNT, name, 0);
 	}
-	/* create wakeup source for only NID = 3,0 or 7.
-	 * From other nodes sensor service stream samples
-	 * cause APPS suspend problems and power drain issue.
+	/* Only keep explicit wake accounting for the non-chatty control paths.
+	 * Node 3 is a high-rate sensor stream and should not keep re-arming
+	 * suspend blockers on every packet.
 	 */
-	if (!node->ws && (nid == 0 || nid == 3 || nid == 7))
+	if (!node->ws && (nid == 0 || nid == 7))
 		node->ws = wakeup_source_register(NULL, name);
 }
 
@@ -849,11 +849,8 @@ int qrtr_endpoint_post(struct qrtr_endpoint *ep, const void *data, size_t len)
 	    cb->type != QRTR_TYPE_RESUME_TX)
 		goto err;
 
-	/*
-	 * Node 3 is the chatty sensor service. Keep the wakeup accounting,
-	 * but avoid hard-aborting suspend on every sample.
-	 */
-	pm_wakeup_ws_event(node->ws, qrtr_wakeup_ms, node->nid != 3);
+	if (node->ws)
+		pm_wakeup_ws_event(node->ws, qrtr_wakeup_ms, true);
 
 	skb->data_len = size;
 	skb->len = size;
