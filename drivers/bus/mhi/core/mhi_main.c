@@ -455,7 +455,7 @@ int mhi_queue_skb(struct mhi_device *mhi_dev,
 
 	/* we're in M3 or transitioning to M3 */
 	if (MHI_PM_IN_SUSPEND_STATE(mhi_cntrl->pm_state))
-		mhi_trigger_resume(mhi_cntrl);
+		mhi_trigger_resume(mhi_cntrl, mhi_chan, "queue_skb");
 
 	/* toggle wake to exit out of M2 */
 	mhi_cntrl->wake_toggle(mhi_cntrl);
@@ -533,7 +533,7 @@ int mhi_queue_dma(struct mhi_device *mhi_dev,
 
 	/* we're in M3 or transitioning to M3 */
 	if (MHI_PM_IN_SUSPEND_STATE(mhi_cntrl->pm_state))
-		mhi_trigger_resume(mhi_cntrl);
+		mhi_trigger_resume(mhi_cntrl, mhi_chan, "queue_dma");
 
 	/* toggle wake to exit out of M2 */
 	mhi_cntrl->wake_toggle(mhi_cntrl);
@@ -680,7 +680,7 @@ int mhi_queue_buf(struct mhi_device *mhi_dev,
 
 	/* we're in M3 or transitioning to M3 */
 	if (MHI_PM_IN_SUSPEND_STATE(mhi_cntrl->pm_state))
-		mhi_trigger_resume(mhi_cntrl);
+		mhi_trigger_resume(mhi_cntrl, mhi_chan, "queue_buf");
 
 	/* toggle wake to exit out of M2 */
 	mhi_cntrl->wake_toggle(mhi_cntrl);
@@ -1580,7 +1580,7 @@ void mhi_ctrl_ev_task(unsigned long data)
 		 * process it since we probably in a suspended state,
 		 * trigger a resume.
 		 */
-		mhi_trigger_resume(mhi_cntrl);
+		mhi_trigger_resume(mhi_cntrl, NULL, "event_task");
 		return;
 	}
 
@@ -1877,7 +1877,7 @@ int mhi_prepare_channel(struct mhi_controller *mhi_cntrl,
 
 	mhi_cntrl->wake_toggle(mhi_cntrl);
 	if (MHI_PM_IN_SUSPEND_STATE(mhi_cntrl->pm_state))
-		mhi_trigger_resume(mhi_cntrl);
+		mhi_trigger_resume(mhi_cntrl, mhi_chan, "start_chan");
 	read_unlock_bh(&mhi_cntrl->pm_lock);
 
 	ret = mhi_send_cmd(mhi_cntrl, mhi_chan, MHI_CMD_START_CHAN);
@@ -2116,7 +2116,7 @@ static void __mhi_unprepare_channel(struct mhi_controller *mhi_cntrl,
 
 	mhi_cntrl->wake_toggle(mhi_cntrl);
 	if (MHI_PM_IN_SUSPEND_STATE(mhi_cntrl->pm_state))
-		mhi_trigger_resume(mhi_cntrl);
+		mhi_trigger_resume(mhi_cntrl, mhi_chan, "reset_chan");
 	read_unlock_bh(&mhi_cntrl->pm_lock);
 
 	ret = mhi_send_cmd(mhi_cntrl, mhi_chan, MHI_CMD_RESET_CHAN);
@@ -2442,7 +2442,7 @@ static int mhi_update_channel_state(struct mhi_controller *mhi_cntrl,
 
 	mhi_cntrl->wake_toggle(mhi_cntrl);
 	if (MHI_PM_IN_SUSPEND_STATE(mhi_cntrl->pm_state))
-		mhi_trigger_resume(mhi_cntrl);
+		mhi_trigger_resume(mhi_cntrl, mhi_chan, "send_cmd");
 	read_unlock_bh(&mhi_cntrl->pm_lock);
 
 	ret = mhi_send_cmd(mhi_cntrl, mhi_chan, cmd);

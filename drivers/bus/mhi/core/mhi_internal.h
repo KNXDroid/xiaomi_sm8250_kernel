@@ -804,9 +804,16 @@ int mhi_process_bw_scale_ev_ring(struct mhi_controller *mhi_cntrl,
 int mhi_send_cmd(struct mhi_controller *mhi_cntrl, struct mhi_chan *mhi_chan,
 		 enum MHI_CMD cmd);
 int __mhi_device_get_sync(struct mhi_controller *mhi_cntrl);
+void mhi_trace_resume(struct mhi_controller *mhi_cntrl,
+		      struct mhi_chan *mhi_chan, const char *reason,
+		      void *caller);
 
-static inline void mhi_trigger_resume(struct mhi_controller *mhi_cntrl)
+static inline void mhi_trigger_resume(struct mhi_controller *mhi_cntrl,
+				      struct mhi_chan *mhi_chan,
+				      const char *reason)
 {
+	mhi_trace_resume(mhi_cntrl, mhi_chan, reason,
+			 __builtin_return_address(0));
 	mhi_cntrl->runtime_get(mhi_cntrl, mhi_cntrl->priv_data);
 	mhi_cntrl->runtime_put(mhi_cntrl, mhi_cntrl->priv_data);
 }

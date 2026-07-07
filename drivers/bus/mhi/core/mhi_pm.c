@@ -17,6 +17,37 @@
 
 static void mhi_special_events_pending(struct mhi_controller *mhi_cntrl);
 
+void mhi_trace_resume(struct mhi_controller *mhi_cntrl,
+		      struct mhi_chan *mhi_chan, const char *reason,
+		      void *caller)
+{
+	const char *chan_name = mhi_chan ? mhi_chan->name : "none";
+	u32 chan = mhi_chan ? mhi_chan->chan : U32_MAX;
+
+	pr_info_ratelimited("mhi wake trace: reason=%s caller=%pS chan=%s(%u) pm=%s dev=%s pending=%d dev_wake=%d wake_set=%d\n",
+			    reason, caller, chan_name, chan,
+			    to_mhi_pm_state_str(mhi_cntrl->pm_state),
+			    TO_MHI_STATE_STR(mhi_cntrl->dev_state),
+			    atomic_read(&mhi_cntrl->pending_pkts),
+			    atomic_read(&mhi_cntrl->dev_wake),
+			    mhi_cntrl->wake_set);
+}
+
+static void mhi_trace_device_vote(struct mhi_device *mhi_dev,
+				  const char *reason, int vote, void *caller)
+{
+	struct mhi_controller *mhi_cntrl = mhi_dev->mhi_cntrl;
+
+	pr_info_ratelimited("mhi wake trace: reason=%s caller=%pS dev=%s vote=0x%x pm=%s dev_state=%s pending=%d dev_wake=%d dev_vote=%d bus_vote=%d\n",
+			    reason, caller, dev_name(&mhi_dev->dev), vote,
+			    to_mhi_pm_state_str(mhi_cntrl->pm_state),
+			    TO_MHI_STATE_STR(mhi_cntrl->dev_state),
+			    atomic_read(&mhi_cntrl->pending_pkts),
+			    atomic_read(&mhi_cntrl->dev_wake),
+			    atomic_read(&mhi_dev->dev_vote),
+			    atomic_read(&mhi_dev->bus_vote));
+}
+
 /*
  * Not all MHI states transitions are sync transitions. Linkdown, SSR, and
  * shutdown can happen anytime asynchronously. This function will transition to
@@ -1596,6 +1627,9 @@ int __mhi_device_get_sync(struct mhi_controller *mhi_cntrl)
 {
 	int ret;
 
+	mhi_trace_resume(mhi_cntrl, NULL, "__device_get_sync",
+			 __builtin_return_address(0));
+
 	read_lock_bh(&mhi_cntrl->pm_lock);
 	if (MHI_PM_IN_ERROR_STATE(mhi_cntrl->pm_state)) {
 		read_unlock_bh(&mhi_cntrl->pm_lock);
@@ -1634,9 +1668,12 @@ void mhi_device_get(struct mhi_device *mhi_dev, int vote)
 {
 	struct mhi_controller *mhi_cntrl = mhi_dev->mhi_cntrl;
 
+	mhi_trace_device_vote(mhi_dev, "device_get_vote", vote,
+			      __builtin_return_address(0));
+
 	if (vote & MHI_VOTE_DEVICE) {
 		read_lock_bh(&mhi_cntrl->pm_lock);
-		mhi_trigger_resume(mhi_cntrl);
+		mhi_trigger_resume(mhi_cntrl, NULL, "device_get");
 		mhi_cntrl->wake_get(mhi_cntrl, true);
 		MHI_LOG("dev_wake %d\n", atomic_read(&mhi_cntrl->dev_wake));
 		read_unlock_bh(&mhi_cntrl->pm_lock);
@@ -1654,6 +1691,9 @@ int mhi_device_get_sync(struct mhi_device *mhi_dev, int vote)
 {
 	struct mhi_controller *mhi_cntrl = mhi_dev->mhi_cntrl;
 	int ret;
+
+	mhi_trace_device_vote(mhi_dev, "device_get_sync_vote", vote,
+			      __builtin_return_address(0));
 
 	/*
 	 * regardless of any vote we will bring device out lpm and assert
@@ -1685,6 +1725,9 @@ int mhi_device_get_sync_atomic(struct mhi_device *mhi_dev, int timeout_us,
 			       bool in_panic)
 {
 	struct mhi_controller *mhi_cntrl = mhi_dev->mhi_cntrl;
+
+	mhi_trace_device_vote(mhi_dev, "device_get_sync_atomic", MHI_VOTE_DEVICE,
+			      __builtin_return_address(0));
 
 	read_lock_bh(&mhi_cntrl->pm_lock);
 	if (MHI_PM_IN_ERROR_STATE(mhi_cntrl->pm_state)) {
@@ -1746,10 +1789,13 @@ void mhi_device_put(struct mhi_device *mhi_dev, int vote)
 {
 	struct mhi_controller *mhi_cntrl = mhi_dev->mhi_cntrl;
 
+	mhi_trace_device_vote(mhi_dev, "device_put_vote", vote,
+			      __builtin_return_address(0));
+
 	if (vote & MHI_VOTE_DEVICE) {
 		atomic_dec(&mhi_dev->dev_vote);
 		read_lock_bh(&mhi_cntrl->pm_lock);
-		mhi_trigger_resume(mhi_cntrl);
+		mhi_trigger_resume(mhi_cntrl, NULL, "device_put");
 		mhi_cntrl->wake_put(mhi_cntrl, false);
 		MHI_LOG("dev_wake %d\n", atomic_read(&mhi_cntrl->dev_wake));
 		read_unlock_bh(&mhi_cntrl->pm_lock);
