@@ -16,6 +16,8 @@
 #include "mhi_internal.h"
 
 static void mhi_special_events_pending(struct mhi_controller *mhi_cntrl);
+static bool trace_wakeups;
+module_param_named(trace_wakeups, trace_wakeups, bool, 0644);
 
 void mhi_trace_resume(struct mhi_controller *mhi_cntrl,
 		      struct mhi_chan *mhi_chan, const char *reason,
@@ -23,6 +25,9 @@ void mhi_trace_resume(struct mhi_controller *mhi_cntrl,
 {
 	const char *chan_name = mhi_chan ? mhi_chan->name : "none";
 	u32 chan = mhi_chan ? mhi_chan->chan : U32_MAX;
+
+	if (!trace_wakeups)
+		return;
 
 	pr_info_ratelimited("mhi wake trace: reason=%s caller=%pS chan=%s(%u) pm=%s dev=%s pending=%d dev_wake=%d wake_set=%d\n",
 			    reason, caller, chan_name, chan,
@@ -37,6 +42,9 @@ static void mhi_trace_device_vote(struct mhi_device *mhi_dev,
 				  const char *reason, int vote, void *caller)
 {
 	struct mhi_controller *mhi_cntrl = mhi_dev->mhi_cntrl;
+
+	if (!trace_wakeups)
+		return;
 
 	pr_info_ratelimited("mhi wake trace: reason=%s caller=%pS dev=%s vote=0x%x pm=%s dev_state=%s pending=%d dev_wake=%d dev_vote=%d bus_vote=%d\n",
 			    reason, caller, dev_name(&mhi_dev->dev), vote,

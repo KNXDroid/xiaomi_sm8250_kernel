@@ -124,6 +124,8 @@ static inline struct qrtr_sock *qrtr_sk(struct sock *sk)
 
 static unsigned int qrtr_local_nid = 1;
 static unsigned int qrtr_wakeup_ms = CONFIG_QRTR_WAKEUP_MS;
+static bool qrtr_trace_wakeups;
+module_param_named(trace_wakeups, qrtr_trace_wakeups, bool, 0644);
 
 /* for node ids */
 static RADIX_TREE(qrtr_nodes, GFP_KERNEL);
@@ -320,6 +322,9 @@ static void qrtr_trace_data(const char *dir, struct qrtr_node *node, u8 type,
 	u32 word0 = 0, word1 = 0;
 	u32 node_id = node ? node->nid : 0;
 
+	if (!qrtr_trace_wakeups)
+		return;
+
 	if (!qrtr_trace_node_match(node, src_node, dst_node))
 		return;
 
@@ -339,6 +344,9 @@ static void qrtr_trace_skb(const char *dir, struct qrtr_node *node,
 			   struct sockaddr_qrtr *to)
 {
 	u32 word0 = 0, word1 = 0;
+
+	if (!qrtr_trace_wakeups)
+		return;
 
 	if (type != QRTR_TYPE_DATA)
 		return;
