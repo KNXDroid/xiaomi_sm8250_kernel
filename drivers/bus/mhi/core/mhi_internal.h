@@ -809,7 +809,6 @@ static inline void mhi_trigger_resume(struct mhi_controller *mhi_cntrl)
 {
 	mhi_cntrl->runtime_get(mhi_cntrl, mhi_cntrl->priv_data);
 	mhi_cntrl->runtime_put(mhi_cntrl, mhi_cntrl->priv_data);
-	pm_wakeup_hard_event(&mhi_cntrl->mhi_dev->dev);
 }
 
 /* queue transfer buffer */
