@@ -496,20 +496,14 @@ static int lpm_cpuidle_select(struct cpuidle_driver *drv,
 		struct cpuidle_device *dev, bool *stop_tick)
 {
 	struct lpm_cpu *cpu = per_cpu(cpu_lpm, dev->cpu);
-	int latency_req = cpuidle_governor_latency_req(dev->cpu);
 	int i;
-
-	if (unlikely(latency_req == 0)) {
-		*stop_tick = false;
-		return 0;
-	}
 
 	if (unlikely(!cpu))
 		return 0;
 
 	/*
-	 * Favor the deepest enabled state that still satisfies the current
-	 * latency request, even for short predicted idle windows.
+	 * Battery-first policy: prefer the deepest enabled state outright and
+	 * only fall back to WFI if nothing deeper is allowed for this CPU.
 	 */
 	for (i = drv->state_count - 1; i > 0; i--) {
 		struct cpuidle_state *state = &drv->states[i];
@@ -518,11 +512,11 @@ static int lpm_cpuidle_select(struct cpuidle_driver *drv,
 			continue;
 		if (!lpm_cpu_mode_allow(dev->cpu, i, true))
 			continue;
-		if (state->exit_latency > latency_req)
-			continue;
+		*stop_tick = true;
 		return i;
 	}
 
+	*stop_tick = false;
 	return 0;
 }
 
