@@ -307,6 +307,56 @@ static void qrtr_log_rx_msg(struct qrtr_node *node, struct sk_buff *skb)
 	}
 }
 
+static bool qrtr_trace_node_match(struct qrtr_node *node, u32 src_node,
+				  u32 dst_node)
+{
+	return src_node == 3 || dst_node == 3 || (node && node->nid == 3);
+}
+
+static void qrtr_trace_data(const char *dir, struct qrtr_node *node, u8 type,
+			    u32 src_node, u32 src_port, u32 dst_node,
+			    u32 dst_port, const void *data, size_t len)
+{
+	u32 word0 = 0, word1 = 0;
+	u32 node_id = node ? node->nid : 0;
+
+	if (!qrtr_trace_node_match(node, src_node, dst_node))
+		return;
+
+	if (len >= sizeof(word0))
+		memcpy(&word0, data, sizeof(word0));
+	if (len >= sizeof(word0) + sizeof(word1))
+		memcpy(&word1, (const u8 *)data + sizeof(word0), sizeof(word1));
+
+	pr_info_ratelimited("qrtr wake trace: %s node=%u type=%u src=%u:%u dst=%u:%u len=%zu msg=[%08x %08x] task=%s\n",
+			    dir, node_id, type, src_node, src_port, dst_node,
+			    dst_port, len, word0, word1, current->comm);
+}
+
+static void qrtr_trace_skb(const char *dir, struct qrtr_node *node,
+			   struct sk_buff *skb, int type,
+			   struct sockaddr_qrtr *from,
+			   struct sockaddr_qrtr *to)
+{
+	u32 word0 = 0, word1 = 0;
+
+	if (type != QRTR_TYPE_DATA)
+		return;
+
+	if (!qrtr_trace_node_match(node, from->sq_node, to->sq_node))
+		return;
+
+	if (skb->len >= sizeof(word0))
+		skb_copy_bits(skb, 0, &word0, sizeof(word0));
+	if (skb->len >= sizeof(word0) + sizeof(word1))
+		skb_copy_bits(skb, sizeof(word0), &word1, sizeof(word1));
+
+	pr_info_ratelimited("qrtr wake trace: %s node=%u type=%d src=%u:%u dst=%u:%u len=%u msg=[%08x %08x] task=%s\n",
+			    dir, node->nid, type, from->sq_node, from->sq_port,
+			    to->sq_node, to->sq_port, skb->len, word0, word1,
+			    current->comm);
+}
+
 static bool refcount_dec_and_rwsem_lock(refcount_t *r,
 					struct rw_semaphore *sem)
 {
@@ -555,6 +605,8 @@ static int qrtr_node_enqueue(struct qrtr_node *node, struct sk_buff *skb,
 			return confirm_rx;
 		}
 	}
+
+	qrtr_trace_skb("tx", node, skb, type, from, to);
 
 	hdr = skb_push(skb, sizeof(*hdr));
 	hdr->version = cpu_to_le32(QRTR_PROTO_VER_1);
@@ -848,6 +900,10 @@ int qrtr_endpoint_post(struct qrtr_endpoint *ep, const void *data, size_t len)
 	if (cb->dst_port != QRTR_PORT_CTRL && cb->type != QRTR_TYPE_DATA &&
 	    cb->type != QRTR_TYPE_RESUME_TX)
 		goto err;
+
+	qrtr_trace_data("rx", node, cb->type, cb->src_node, cb->src_port,
+			cb->dst_node, cb->dst_port,
+			(const u8 *)data + hdrlen, size);
 
 	if (node->ws)
 		pm_wakeup_ws_event(node->ws, qrtr_wakeup_ms, true);
