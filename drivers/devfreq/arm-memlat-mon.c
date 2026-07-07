@@ -669,7 +669,12 @@ static int memlat_cpu_grp_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	mutex_init(&cpu_grp->mons_lock);
-	hrtimer_init(&cpu_grp->timer, CLOCK_BOOTTIME, HRTIMER_MODE_REL);
+	/*
+	 * Keep polling paused while the system is suspended. Resume paths
+	 * already refresh devfreq state, so the timer does not need to span
+	 * suspend and wake the SoC back up.
+	 */
+	hrtimer_init(&cpu_grp->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	cpu_grp->timer.function = memlat_hrtimer_handler;
 	init_waitqueue_head(&cpu_grp->waitq);
 	atomic_set(&cpu_grp->kick, 0);
