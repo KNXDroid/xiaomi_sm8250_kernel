@@ -9,15 +9,15 @@
 #include "munch-sm8250.dtsi"
 #include "munch-sm8250-camera-sensor-mtp.dtsi"
 
-fragment@0 {
-	target-path = "/chosen";
-	__overlay__ {
-		bootargs = "quiet noirqdebug nodebugmon rcupdate.rcu_expedited=1 rcu_nocbs=0-7 kpti=off cgroup_disable=pressure";
-	};
-};
-
 / {
 	model = "Qualcomm Technologies, Inc. xiaomi munch";
 	compatible = "qcom,kona-mtp", "qcom,kona", "qcom,mtp";
 	qcom,board-id = <50 0>;
+
+	fragment@0 {
+		target-path = "/chosen";
+		__overlay__ {
+			bootargs = "quiet noirqdebug nodebugmon rcupdate.rcu_expedited=1 rcu_nocbs=0-7 kpti=off cgroup_disable=pressure";
+		};
+	};
 };
