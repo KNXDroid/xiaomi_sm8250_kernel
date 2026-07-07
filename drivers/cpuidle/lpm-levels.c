@@ -638,7 +638,7 @@ static int cluster_cpuidle_register(struct lpm_cluster *cl)
 		if (!lpm_cpu->drv)
 			return -ENOMEM;
 
-		lpm_cpu->drv->name = "msm_idle";
+		lpm_cpu->drv->name = "lpm-levels";
 
 		for (i = 0; i < lpm_cpu->nlevels; i++) {
 			struct cpuidle_state *st = &lpm_cpu->drv->states[i];
