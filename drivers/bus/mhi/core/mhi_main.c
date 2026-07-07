@@ -654,6 +654,7 @@ int mhi_queue_buf(struct mhi_device *mhi_dev,
 	struct mhi_controller *mhi_cntrl = mhi_dev->mhi_cntrl;
 	struct mhi_ring *tre_ring;
 	unsigned long flags;
+	bool rx_recycle;
 	int ret;
 
 	/*
@@ -676,10 +677,12 @@ int mhi_queue_buf(struct mhi_device *mhi_dev,
 	if (unlikely(ret))
 		return ret;
 
+	rx_recycle = mhi_chan->pre_alloc && mhi_chan->dir == DMA_FROM_DEVICE;
+
 	read_lock_irqsave(&mhi_cntrl->pm_lock, flags);
 
-	/* we're in M3 or transitioning to M3 */
-	if (MHI_PM_IN_SUSPEND_STATE(mhi_cntrl->pm_state))
+	/* Do not pull the link out of M3 only to return one RX credit. */
+	if (MHI_PM_IN_SUSPEND_STATE(mhi_cntrl->pm_state) && !rx_recycle)
 		mhi_trigger_resume(mhi_cntrl, mhi_chan, "queue_buf");
 
 	/* toggle wake to exit out of M2 */
