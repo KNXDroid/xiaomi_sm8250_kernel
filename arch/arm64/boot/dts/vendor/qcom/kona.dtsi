@@ -2760,7 +2760,6 @@
 			qcom,slpi_qrtr {
 				qcom,net-id = <2>;
 				qcom,glink-channels = "IPCRTR";
-				qcom,low-latency;
 				qcom,intents = <0x800  5
 						0x2000 3
 						0x4400 2>;
@@ -4029,7 +4028,6 @@
 			mhi_qrtr {
 				mhi,chan = "IPCR";
 				qcom,net-id = <0>;
-				qcom,low-latency;
 				mhi,early-notify;
 			};
 		};
@@ -4318,4 +4316,3 @@
 			<2745600>,
 			<2841600>;
 };
-
