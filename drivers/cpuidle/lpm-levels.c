@@ -496,10 +496,7 @@ static int lpm_cpuidle_select(struct cpuidle_driver *drv,
 		struct cpuidle_device *dev, bool *stop_tick)
 {
 	struct lpm_cpu *cpu = per_cpu(cpu_lpm, dev->cpu);
-	ktime_t delta_next;
-	s64 duration_ns = tick_nohz_get_sleep_length(&delta_next);
 	int latency_req = cpuidle_governor_latency_req(dev->cpu);
-	u64 sleep_us = 0;
 	int i;
 
 	if (unlikely(latency_req == 0)) {
@@ -507,32 +504,21 @@ static int lpm_cpuidle_select(struct cpuidle_driver *drv,
 		return 0;
 	}
 
-	if (duration_ns <= TICK_NSEC)
-		*stop_tick = false;
-
 	if (unlikely(!cpu))
 		return 0;
 
-	if (duration_ns > 0)
-		sleep_us = DIV_ROUND_UP_ULL(duration_ns, NSEC_PER_USEC);
-
+	/*
+	 * Favor the deepest enabled state that still satisfies the current
+	 * latency request, even for short predicted idle windows.
+	 */
 	for (i = drv->state_count - 1; i > 0; i--) {
 		struct cpuidle_state *state = &drv->states[i];
-		struct lpm_cpu_level *level = &cpu->levels[i];
-		u64 transition_cost_us = level->pwr.entry_latency +
-					 level->pwr.exit_latency;
 
 		if (state->disabled || dev->states_usage[i].disable)
 			continue;
 		if (!lpm_cpu_mode_allow(dev->cpu, i, true))
 			continue;
 		if (state->exit_latency > latency_req)
-			continue;
-		/*
-		 * DT min-residency is a break-even hint. Let the deeper state
-		 * run as soon as the idle window can cover the transition cost.
-		 */
-		if (sleep_us < transition_cost_us)
 			continue;
 		return i;
 	}
