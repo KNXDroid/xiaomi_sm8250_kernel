@@ -38,6 +38,7 @@
 #define QRTR_MIN_EPH_SOCKET 0x4000
 #define QRTR_MAX_EPH_SOCKET 0x7fff
 
+#define QRTR_NODE_MODEM 3
 #define QRTR_PORT_CTRL_LEGACY 0xffff
 
 /* qrtr socket states */
@@ -205,6 +206,8 @@ struct qrtr_tx_flow {
 
 #define QRTR_TX_FLOW_HIGH	10
 #define QRTR_TX_FLOW_LOW	5
+#define QRTR_MODEM_TX_FLOW_HIGH	32
+#define QRTR_MODEM_TX_FLOW_LOW	16
 
 static struct sk_buff *qrtr_alloc_ctrl_packet(struct qrtr_ctrl_pkt **pkt);
 static int qrtr_local_enqueue(struct qrtr_node *node, struct sk_buff *skb,
@@ -312,7 +315,8 @@ static void qrtr_log_rx_msg(struct qrtr_node *node, struct sk_buff *skb)
 static bool qrtr_trace_node_match(struct qrtr_node *node, u32 src_node,
 				  u32 dst_node)
 {
-	return src_node == 3 || dst_node == 3 || (node && node->nid == 3);
+	return src_node == QRTR_NODE_MODEM || dst_node == QRTR_NODE_MODEM ||
+	       (node && node->nid == QRTR_NODE_MODEM);
 }
 
 static void qrtr_trace_data(const char *dir, struct qrtr_node *node, u8 type,
@@ -524,6 +528,8 @@ static int qrtr_tx_wait(struct qrtr_node *node, struct sockaddr_qrtr *to,
 	struct qrtr_tx_flow_waiter *waiter;
 	struct qrtr_tx_flow *flow;
 	unsigned long key = (u64)to->sq_node << 32 | to->sq_port;
+	int flow_high = QRTR_TX_FLOW_HIGH;
+	int flow_low = QRTR_TX_FLOW_LOW;
 	int confirm_rx = 0;
 	long timeo;
 	long ret;
@@ -531,6 +537,11 @@ static int qrtr_tx_wait(struct qrtr_node *node, struct sockaddr_qrtr *to,
 	/* Never set confirm_rx on non-data packets */
 	if (type != QRTR_TYPE_DATA)
 		return 0;
+
+	if (to->sq_node == QRTR_NODE_MODEM) {
+		flow_high = QRTR_MODEM_TX_FLOW_HIGH;
+		flow_low = QRTR_MODEM_TX_FLOW_LOW;
+	}
 
 	/* Assume sk is set correctly for all data type packets */
 	timeo = sock_sndtimeo(sk, flags & MSG_DONTWAIT);
@@ -549,10 +560,10 @@ static int qrtr_tx_wait(struct qrtr_node *node, struct sockaddr_qrtr *to,
 			radix_tree_insert(&node->qrtr_tx_flow, key, flow);
 		}
 
-		if (atomic_read(&flow->pending) < QRTR_TX_FLOW_HIGH) {
+		if (atomic_read(&flow->pending) < flow_high) {
 			atomic_inc(&flow->pending);
 			confirm_rx = atomic_read(&flow->pending) ==
-				     QRTR_TX_FLOW_LOW;
+				     flow_low;
 			mutex_unlock(&node->qrtr_tx_lock);
 			break;
 		}
@@ -572,7 +583,7 @@ static int qrtr_tx_wait(struct qrtr_node *node, struct sockaddr_qrtr *to,
 
 		ret = wait_event_interruptible_timeout(node->resume_tx,
 				!node->ep ||
-				atomic_read(&flow->pending) < QRTR_TX_FLOW_HIGH,
+				atomic_read(&flow->pending) < flow_high,
 				timeo);
 		if (ret < 0)
 			return ret;
