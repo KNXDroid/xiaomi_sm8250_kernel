@@ -123,63 +123,25 @@ static unsigned int get_next_online_cpu(bool from_idle)
 	return next_cpu;
 }
 
-static uint64_t get_cluster_sleep_time(struct lpm_cluster *cluster,
-		bool from_idle)
-{
-	int cpu;
-	ktime_t next_event;
-	struct cpumask online_cpus_in_cluster;
-
-	if (!from_idle)
-		return ~0ULL;
-
-	next_event = KTIME_MAX;
-	cpumask_and(&online_cpus_in_cluster,
-			&cluster->num_children_in_sync, cpu_online_mask);
-
-	for_each_cpu(cpu, &online_cpus_in_cluster) {
-		ktime_t *next_event_c;
-
-		next_event_c = get_next_event_cpu(cpu);
-		if (*next_event_c < next_event)
-			next_event = *next_event_c;
-	}
-
-	if (ktime_to_us(next_event) > ktime_to_us(ktime_get()))
-		return ktime_to_us(ktime_sub(next_event, ktime_get()));
-	else
-		return 0;
-}
-
 static int cluster_select(struct lpm_cluster *cluster, bool from_idle)
 {
-	int best_level = -1;
 	int i;
 	struct cpumask mask;
 	uint32_t latency_us = ~0U;
-	uint32_t sleep_us;
 
 	if (!cluster)
 		return -EINVAL;
-
-	sleep_us = (uint32_t)get_cluster_sleep_time(cluster, from_idle);
-
-	if (from_idle && g_target_fps <= 30) {
-		/*
-		 * Add 5000us (5ms) bias.
-		 * Usually C3/C4 states require ~1000-2000us residency to be worth it.
-		 * This ensures we hit that threshold easily.
-		 */
-		sleep_us += 2000;
-	}
 
 	if (cpumask_and(&mask, cpu_online_mask, &cluster->child_cpus))
 		latency_us = pm_qos_request_for_cpumask(PM_QOS_CPU_DMA_LATENCY,
 							&mask);
 
-	for (i = 0; i < cluster->nlevels; i++) {
+	/*
+	 * Battery-first policy: pick the deepest cluster state that is still
+	 * allowed by the current latency request and firmware constraints.
+	 */
+	for (i = cluster->nlevels - 1; i >= 0; i--) {
 		struct lpm_cluster_level *level = &cluster->levels[i];
-		struct power_params *pwr_params = &level->pwr;
 
 		if (!lpm_cluster_mode_allow(cluster, i, from_idle))
 			continue;
@@ -188,12 +150,8 @@ static int cluster_select(struct lpm_cluster *cluster, bool from_idle)
 					&level->num_cpu_votes))
 			continue;
 
-		if (from_idle && latency_us <= pwr_params->exit_latency)
-			break;
-
-		if (sleep_us < (pwr_params->exit_latency +
-						pwr_params->entry_latency))
-			break;
+		if (from_idle && latency_us <= level->pwr.exit_latency)
+			continue;
 
 		if (suspend_in_progress && from_idle && level->notify_rpm)
 			continue;
@@ -205,13 +163,10 @@ static int cluster_select(struct lpm_cluster *cluster, bool from_idle)
 				continue;
 		}
 
-		best_level = i;
-
-		if (from_idle && sleep_us <= pwr_params->max_residency)
-			break;
+		return i;
 	}
 
-	return best_level;
+	return -1;
 }
 
 static int cluster_configure(struct lpm_cluster *cluster, int idx,
