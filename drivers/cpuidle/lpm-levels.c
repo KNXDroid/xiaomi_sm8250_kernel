@@ -519,6 +519,8 @@ static int lpm_cpuidle_select(struct cpuidle_driver *drv,
 	for (i = drv->state_count - 1; i > 0; i--) {
 		struct cpuidle_state *state = &drv->states[i];
 		struct lpm_cpu_level *level = &cpu->levels[i];
+		u64 transition_cost_us = level->pwr.entry_latency +
+					 level->pwr.exit_latency;
 
 		if (state->disabled || dev->states_usage[i].disable)
 			continue;
@@ -526,7 +528,11 @@ static int lpm_cpuidle_select(struct cpuidle_driver *drv,
 			continue;
 		if (state->exit_latency > latency_req)
 			continue;
-		if (sleep_us < level->pwr.min_residency)
+		/*
+		 * DT min-residency is a break-even hint. Let the deeper state
+		 * run as soon as the idle window can cover the transition cost.
+		 */
+		if (sleep_us < transition_cost_us)
 			continue;
 		return i;
 	}
